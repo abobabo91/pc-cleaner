@@ -59,6 +59,19 @@ Grouped by module. Some are simple JSON extracts of existing knowledge; some nee
 - **`storage_conflicts.json`** — user may already run CCleaner / Wise Disk Cleaner with its own scheduled Prefetch/Temp sweeps. Our auto-purge could fight it. Analogous to `explorer_conflicts.json`.
 - **`modern_standby_overrides.json`** — some Lenovo Ideapad SKUs expose S3 via BIOS setting. Power module currently branches purely on CPU gen; small mfg+model override list would prevent applying DC-sleep-never on machines where the user flipped BIOS to S3.
 
+## Uncertainty flags from data-files agent round 2 (2026-07-04)
+
+Verify these at runtime; do not trust the data file value blindly.
+
+- **NVIDIA `nvlddmkm.sys` min-good-version** — no specific known-bad version pinned; placeholder in `known_bad_drivers.json`. Real answer varies by GPU generation.
+- **Intel RST `iaStorAC.sys` min-good** — 17.11 estimate; real threshold varies by PCH.
+- **HP SoftPaq bucket boundaries** (`sp{lower}-{upper}` in `driver_sources.json`) — verified for the current 500-range HP uses, but historically HP has shifted bucket sizes.
+- **Windows SDK fwlink `2286561`** — verified working 2026-07-04. `sdk_urls.json` has `verifyMonthly: true` flag + refresh instructions; the crashdumps apply script must fall back to `winget install Microsoft.WindowsSDK` if the URL 404s.
+- **`ShowCopilotButton` registry key name in `explorer_keys.json`** — Microsoft has renamed the Copilot toggle multiple times across 23H2/24H2/25H2. Probe the current value name at runtime before writing.
+- **Various winget IDs in `ninite_bundles.json`** — `Microsoft.Office` vs `Microsoft365.Apps`, `TheDocumentFoundation.LibreOffice` vs `LibreOffice.LibreOffice`, `DarkTable.DarkTable` casing, NVIDIA App vs GeForce Experience — marked with `verify:` fields; resolve at runtime by trying the primary, falling back to alternates.
+- **BIOS S3 opt-in list in `modern_standby_overrides.json`** — labeled `_bestEffort`. Module must always defer to live `powercfg /a` at runtime; the list is a hint about which machines have a BIOS knob at all.
+- **`taskbar_default_pins.json` programmatic unpin on 24H2** — fragile (documented in the file's `_apiRisk` field). Matches the tray-taskbar module doc's warning about undocumented `FavoritesResolve` blob.
+
 ## Known unknowns (agent flagged)
 
 - **tray-taskbar pinned-app manipulation on Win11 24H2**: Microsoft moved the pins to a binary blob (`FavoritesResolve` or newer format). Undocumented, changes between builds. Fallback plan documented but may need a native COM helper (`IPinnedListManager`) that PowerShell can't cleanly reach on all builds.
