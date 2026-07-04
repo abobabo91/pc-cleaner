@@ -29,36 +29,91 @@ Never override a KEEP-TRIPWIRE.
 
 ### 3. Batch the MAYBEs into ≤4 grouped multi-select questions
 
-**Plain-English rule: describe what the thing is FOR, not its technical name.** No `SMB`, `MDM`, `HKCU`, `WSearch`, `ssh-agent` etc. in the visible question text.
+**Two rules for every question:**
+
+**Rule A — Plain English, no jargon.** No `SMB`, `MDM`, `HKCU`, `WSearch`, `ssh-agent` in what the user reads. Describe what the thing is FOR.
+
+**Rule B — Always include "I'm not sure" as an option.** Most users honestly don't know if they use SMB, Miracast, IPv6, or SSH. Never make them guess. When they pick "I'm not sure", auto-detect from evidence on the machine (see the inference rules below each question) and treat the answer as if they said yes or no accordingly.
 
 Ask exactly this shape (adjust items to what's actually installed on THIS machine):
 
-**Q1 — "What do you actually use on this computer?" (check all that apply)**
-- I print or scan documents from this computer
-- I unlock this laptop with my face or fingerprint
-- My laptop's screen dims automatically in dim light (I want that)
-- I use surround sound / Dolby Atmos on speakers or headphones
+---
 
-**Q2 — "How do you use the network?" (check all that apply)**
-- I share files or folders from this computer so other devices on my WiFi can open them
-- I sometimes cast my screen wirelessly to a TV
-- I sometimes play music/video from this laptop to a wireless speaker or smart TV
-- I use the built-in Windows VPN feature (not OpenVPN or a separate VPN app)
-- I play online games or use apps that specifically require IPv6 (very rare — say no if unsure)
+**Q1 — "What do you actually use on this computer?" (check all that apply)**
+- [ ] I print or scan documents from this computer
+- [ ] I unlock this laptop with my face or fingerprint (Windows Hello)
+- [ ] I like when my laptop's screen brightness adjusts automatically as I move between dim and bright rooms
+- [ ] I care about surround sound / Dolby Atmos on my headphones or speakers
+- [ ] **I'm not sure — figure it out for me**
+
+If the user picks "I'm not sure" (or leaves some items blank), auto-detect:
+- **Printer/scanner:** `Get-Printer | Where-Object { $_.Type -ne 'Local' -or $_.PrinterStatus -eq 'Normal' }` — if zero real printers OR none used in last 90 days (check job history), infer NO.
+- **Face/fingerprint:** check registry `HKLM:\SOFTWARE\Microsoft\Windows Hello for Business` and `Get-PnpDevice -Class Biometric` — if no biometric device or Hello not enrolled, infer NO.
+- **Auto-brightness:** check for ambient light sensor `Get-PnpDevice | Where-Object { $_.Class -eq 'Sensor' -and $_.FriendlyName -match 'ambient|light' }` — no sensor = NO.
+- **Dolby Atmos:** check if Dolby Access app is installed OR `DolbyDAXAPI` service is currently running — otherwise NO.
+
+---
+
+**Q2 — "How do you use your home network?" (check all that apply)**
+- [ ] I share files or a printer from this computer so my phone, tablet, or other computers on my WiFi can see them
+- [ ] I sometimes send my screen or music/video from this laptop to a TV or speaker wirelessly (like Chromecast / AirPlay / Miracast — not via HDMI cable)
+- [ ] I connect to a VPN using Windows' built-in feature (Settings → Network & internet → VPN) — NOT a separate app like NordVPN, OpenVPN, or ExpressVPN
+- [ ] **I'm not sure — figure it out for me**
+
+Inference for "I'm not sure":
+- **Share files:** `Get-SmbShare | Where-Object { $_.Name -notin 'ADMIN$','C$','IPC$','print$' }` — if zero user-created shares, NO.
+- **Cast/Miracast:** almost never true for typical users. If unsure → NO. Only check YES if `Get-Process | Where-Object { $_.Name -match 'miracast|castto' }` has run recently.
+- **Windows VPN:** `Get-VpnConnection` — if zero configured, NO. If OpenVPN is running as a service (already detected in profile), the user isn't using Windows VPN.
+
+---
 
 **Q3 — "Which Microsoft things do you actually use?" (check all that apply)**
-- OneDrive — even just occasionally
-- Word / Excel / PowerPoint installed as desktop apps (not just in the browser)
-- Microsoft Edge browser (as my main or backup browser)
-- Windows Copilot, the new Mail app, or the Calendar app
+- [ ] OneDrive — my Microsoft cloud storage, even just occasionally
+- [ ] Word, Excel, or PowerPoint installed as desktop apps (NOT just in the browser)
+- [ ] Microsoft Edge as my browser — main OR backup
+- [ ] Windows Copilot, or the new Mail / Calendar apps
+- [ ] **I'm not sure**
+
+Inference:
+- **OneDrive:** `Get-Process OneDrive` running OR registry `HKCU:\Software\Microsoft\OneDrive\Accounts\Personal` shows an account. If neither, NO.
+- **Office desktop:** `ClickToRunSvc` service Running OR `C:\Program Files\Microsoft Office` exists with recent access time. If neither, NO.
+- **Edge:** check `%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Preferences` `last_active_time` — if older than 90 days, NO.
+- **Copilot / UWP Mail:** UserAssist launch count — if never launched, NO.
+
+---
 
 **Q4 — "Last few things:" (check all that apply)**
-- Keep Windows' file search working in the Start menu (uses ~200 MB of RAM constantly — turn off if you use Everything or don't rely on Start search)
-- I use Git or SSH keys from the command line (turns on the key helper so you don't retype passphrases)
-- I still actively use Dropbox
-- I use Comet (Perplexity's browser)
+- [ ] I want the Start menu to find my files when I type — like searching for a document by name (this uses about 200 MB of memory constantly; turn it off only if you use Everything by voidtools)
+- [ ] I write code and use Git / SSH from a command line (this is a coder tool — if you don't know what SSH is, you don't need it)
+- [ ] I still actively use Dropbox
+- [ ] I use Comet, the AI browser from Perplexity
+- [ ] **I'm not sure**
 
-Use `AskUserQuestion` with `multiSelect: true`. Anything the user does NOT check → tip toward DISABLE. Anything they check → mark KEEP-FOR-YOU and skip the disable.
+Inference:
+- **Windows Search:** default KEEP unless the user has Everything (`voidtools.Everything`) installed. If they do have Everything, ask explicitly: "You have Everything installed — turn off Windows Search to save memory?"
+- **Git/SSH:** check `git` in PATH OR `%USERPROFILE%\.gitconfig` exists OR any repo under Desktop/Documents. If none, NO — most non-developers won't have any of these.
+- **Dropbox:** `Get-Process Dropbox` running OR `HKCU:\Software\Dropbox` has a recent access. If neither, NO — and flag Dropbox for uninstall in the `bloat` module instead.
+- **Comet:** check installed apps. If not installed, skip the question entirely.
+
+---
+
+**Adaptive question phrasing:** Don't ask about things that aren't relevant to this machine.
+- Skip Q1 face/fingerprint item if no biometric hardware exists.
+- Skip Q1 auto-brightness item if no ambient light sensor exists.
+- Skip Q2 Windows VPN item if the user has OpenVPN or another VPN app running (they've already answered).
+- Skip Q4 Comet item if Comet isn't installed.
+
+**On "I'm not sure":** Show the user what was auto-detected so they learn:
+```
+Auto-detected for you:
+- Printer/scanner: NO (no printers configured)
+- Face/fingerprint: NO (no biometric hardware)
+- Windows VPN: NO (0 VPN connections in Windows Settings — you use OpenVPN separately)
+- Git/SSH: NO (no .gitconfig, no git in PATH)
+```
+Then apply based on those inferences.
+
+Use `AskUserQuestion` with `multiSelect: true`. Anything the user does NOT check AND the inference says NO → disable. Anything they check → mark KEEP-FOR-YOU.
 
 Keep the raw service names (`Spooler`, `WSearch`, `LanmanServer`, etc.) INTERNAL — used in the plan JSON and log, never shown to the user.
 

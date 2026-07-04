@@ -28,6 +28,11 @@ If the user asked in natural language ("clean my PC", "make it faster") without 
 5. **Never touch tripwire services / settings.** See `data/services_tripwire.json`. If a user tries to force one via a flag, explain the risk and refuse without `--iknowwhatimdoing`.
 6. **Additive optional modules only apply if opted in.** The user's iPhone doesn't get their apps rearranged because they said "clean my PC".
 7. **All user-facing questions must be plain English, informal.** Never use technical names in what the user reads. Describe things from the user's perspective ("Do you share files from this computer so other people on your WiFi can access them?"), not the technical name ("Enable SMB server?"). If a term is unavoidable, add a parenthetical explanation ("this is very rare", "used by only a few games"). No jargon: no `MDM`, `S3`, `HKCU`, `SubsystemVendor`, `LPS flags`, `Prefetch`, `stornvme`, etc. in the question text itself.
+8. **Always include "I'm not sure — figure it out for me" as an option on every user question.** Most users don't know if they use SMB, Miracast, IPv6, SSH, or half the other things we might ask about. Never make them guess. When they pick "I'm not sure", auto-detect from the machine (installed apps, running processes, registry state, hardware presence, recent-use timestamps) and treat the answer as if they said yes or no based on evidence. After inference, show the user what was auto-decided so they learn what these things actually mean.
+
+Adaptive rule: if a question item isn't relevant to THIS machine (e.g. asking about fingerprint login on a machine with no biometric hardware), skip that item entirely — don't ask about things that can't apply.
+
+**Every module doc must specify the inference rule for each question item** — the exact PowerShell / registry check that produces YES or NO. Auto-inference is a hard contract, not "Claude figures it out."
 
 Good vs bad examples:
 
