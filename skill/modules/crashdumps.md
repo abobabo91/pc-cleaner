@@ -12,7 +12,7 @@ At the end of this module the user has:
 3. All recent minidumps from `C:\Windows\Minidump\*.dmp` copied to `<snapshotDir>/crashdumps/dumps/`.
 4. For each dump: a `kd.exe -z <dump> -c "!analyze -v; q" -logo` log stored, and parsed `MODULE_NAME`, `IMAGE_NAME`, `BUGCHECK_CODE`, `BUGCHECK_STR`, `FAILURE_BUCKET_ID`, `PROCESS_NAME`.
 5. A report ranking failing drivers by count, mapped to human-readable driver names via `data/known_drivers.json`.
-6. `drivers` module cross-linkage: for each blamed driver, the report notes whether `drivers` module also flagged it (stale / OEM mismatch).
+6. `drivers` module cross-linkage: for each blamed driver, the report notes whether `drivers` also flagged it. If drivers module hasn't run yet, offer to run it now.
 
 ## Flow
 
@@ -24,17 +24,52 @@ Run `ps/diagnose/crashdumps.ps1`. It:
 - Enumerates `C:\Windows\Minidump\*.dmp` — count, oldest, newest, total bytes.
 - Enumerates `C:\Windows\MEMORY.DMP` (full kernel dump if the user has kernel dump enabled).
 - Also enumerates kernel-power 41 events with `BugCheckCode=0` in last 30 d — these are freezes without a dump, useful for the report even though we can't analyze them (see Modern Standby fingerprint in `power` module).
+- `.recentCrashCount` — integer count for the introductory question.
 
-### 2. Ask the user
+### 2. Ask the user, conversationally
 
-**Plain-English rule: describe what we're doing ("figure out which driver is crashing your PC") instead of tool names like "WinDbg" or "kd.exe."** Keep raw tool names, symbol paths, and SDK URLs INTERNAL. Substitute the actual crash-log count found at diagnose time.
+**Plain-English rule: describe what we're doing ("figure out which driver is crashing your PC") instead of tool names like "WinDbg" or "kd.exe."** Keep raw tool names, symbol paths, and SDK URLs INTERNAL.
 
-Single `AskUserQuestion`:
+Use `AskUserQuestion` with `multiSelect: false` — one call per question.
 
-**Q1 — "I found N crash reports from the last 30 days. Want me to figure out which driver is crashing your PC?" (this needs a ~200 MB tool from Microsoft. I'll download it, run it against the crash reports, and give you a ranked list of which driver / hardware chip is to blame.)**
-- Yes — download the analysis tool (~200 MB) and analyze the crash reports
-- Yes — I've already got the tool installed, just do the analysis
-- No — skip this
+---
+
+**Q1 — Should we investigate the crashes?**
+
+> "I noticed your PC has crashed [N] times in the last 3 months. Want me to figure out which driver or program is causing it? (Takes about 5 minutes and downloads a Microsoft diagnostic tool.)"
+
+Answers:
+- `Yes`
+- `No`
+- `Explain more`
+
+`Explain more` prints: "When Windows crashes, it saves a small memory snapshot (~500 KB per crash) under `C:\Windows\Minidump\`. Microsoft provides a free command-line tool (`kd.exe`, ~200 MB) that can read those snapshots and identify which driver was executing when the crash happened. I'll download the tool, run it against each snapshot, and give you a list ranked by which driver crashed most often."
+
+*Skip if:* `.recentCrashCount = 0` AND no Kernel-Power 41 no-dump freezes in the last 30 d.
+
+*"I'm not sure" inference:* → YES if `.recentCrashCount >= 3` (recurring; worth 5 minutes of your time). Otherwise → NO (one-off crashes are usually cosmic-ray-adjacent).
+
+*Controls:* SDK download → `kd.exe` install → per-dump `!analyze -v`.
+
+---
+
+**Q2 — Hand off to the drivers module?**
+
+(Asked automatically after Q1 completes with a top offender identified.)
+
+> "Your crashes are being caused by [driver name]. The `drivers` module can look for a fix. Want me to run the drivers module now to find a fix?"
+
+Answers:
+- `Yes` — invoke `drivers` module immediately with the top-offender driver pre-flagged.
+- `No` — done; user can run `drivers` manually later.
+
+*Skip if:* `drivers` module already ran in this session (dependency check via run state). Skip if the analysis found no clear top offender.
+
+*"I'm not sure" inference:* → YES. This is the natural next step.
+
+*Controls:* set `pendingDriverFocus = <driverName>` in run state; the orchestrator will invoke `drivers` with that focus.
+
+---
 
 ### 3. Build plan JSON
 
@@ -43,19 +78,21 @@ Single `AskUserQuestion`:
   "installSdk": true,
   "analyzeCount": 10,
   "symbolCachePath": "C:\\Symbols",
-  "symbolServer": "https://msdl.microsoft.com/download/symbols"
+  "symbolServer": "https://msdl.microsoft.com/download/symbols",
+  "handoffToDrivers": true
 }
 ```
 
 ### 4. Apply (elevated)
 
 Call `ps/apply/crashdumps.ps1 -Plan <path> -SnapshotDir <path>`. It:
-- If `installSdk` and `kd.exe` not present: download `winsdksetup.exe` from `https://go.microsoft.com/fwlink/?linkid=<current>` (encoded in `data/sdk_urls.json` — check current link before shipping), run `winsdksetup.exe /features OptionId.WindowsDesktopDebuggers /quiet /norestart /log <snapshotDir>/sdk-install.log`. Wait for exit; verify `kd.exe` appears.
+- If `installSdk` and `kd.exe` not present: download `winsdksetup.exe` from URL in `data/sdk_urls.json`, run `winsdksetup.exe /features OptionId.WindowsDesktopDebuggers /quiet /norestart /log <snapshotDir>/sdk-install.log`. Wait for exit; verify `kd.exe` appears.
 - Set `_NT_SYMBOL_PATH` machine-scope: `[Environment]::SetEnvironmentVariable('_NT_SYMBOL_PATH','srv*C:\Symbols*https://msdl.microsoft.com/download/symbols','Machine')`. Also `New-Item C:\Symbols -ItemType Directory -Force`.
 - Copy the last `analyzeCount` `.dmp` files (by LastWriteTime desc) from `C:\Windows\Minidump\` to `<snapshotDir>/crashdumps/dumps/`. This copy step needs elevation because `Minidump` folder ACL is Administrators-only.
 - For each copied dump: `& $kd -z "$dump" -c "!analyze -v; q" -logo "<snapshotDir>/crashdumps/logs/<dumpname>.log"`. Kd downloads symbols on first run — first analysis is slow (30-60 s), subsequent fast.
 - Parse each log: extract `BUGCHECK_CODE`, `BUGCHECK_STR`, `MODULE_NAME`, `IMAGE_NAME`, `FAILURE_BUCKET_ID`, `PROCESS_NAME`, `STACK_TEXT` first frame.
 - Group by `IMAGE_NAME` (or `MODULE_NAME` when `IMAGE_NAME` empty) and emit ranked report.
+- Write `<snapshotDir>/crash_linked_drivers.json` — the top offenders for the `drivers` module to read (SKILL.md cross-module contract #6).
 
 ### 5. Report
 
@@ -68,6 +105,8 @@ Table:
 | 3 | amdacpbus.sys | AMD ACP bus (carries BT on Ryzen) | 0x133 | 1 | drivers module: latest BIOS ships this |
 
 Note the total count of kernel-power 41 freezes (no dump) alongside, since those are silent Modern Standby crashes not covered by bugcheck analysis. If that count is high, point at `power` module.
+
+Then Q2 fires — offering the drivers-module handoff.
 
 ## Known gotchas
 
@@ -94,6 +133,6 @@ Note the total count of kernel-power 41 freezes (no dump) alongside, since those
 
 - `profile.arch` (x64 vs ARM64): pick the matching kd.exe path. `C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\` vs `\arm64\`.
 - `profile.flags.isModernStandbyOnly=true`: the report MUST explicitly separate real bugchecks from Kernel-Power 41 no-dump freezes. Cross-link to `power` module fix (lid = do nothing, hibernate on DC timer).
-- Bugcheck count in last 30 d = 0: still run if user asked — user may want to verify no historic dumps are lingering. Report should say "no minidumps found; if you've had crashes, verify Small Memory Dump is enabled in System Properties → Advanced → Startup and Recovery."
+- Bugcheck count in last 30 d = 0: skip Q1; nothing to analyze. Report should say "no minidumps found; if you've had crashes, verify Small Memory Dump is enabled in System Properties → Advanced → Startup and Recovery."
 - Small NVMe with `<10 GB` free: warn before installing SDK — 200 MB SDK + up to 8 GB symbol cache.
 - Corporate machine (`profile.domain.joined=true` or MDM-managed): warn user before installing SDK unattended — IT may treat unattended SDK installs as policy violations. Suggest opt-out.

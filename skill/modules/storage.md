@@ -1,6 +1,6 @@
 # module: storage
 
-Tier: CORE. Auto-runs. Safe temp cleanup + DISM component cleanup + Storage Sense config. Asks ≤2 grouped questions.
+Tier: CORE. Auto-runs. Safe temp cleanup + DISM component cleanup + Storage Sense config. One summary question up front, then individual conversational questions per destructive item.
 
 ## Success criteria
 
@@ -9,9 +9,10 @@ At the end of this module the user has:
 2. `%TEMP%` and `%LOCALAPPDATA%\Temp` emptied of files older than 24 hours (skip open handles).
 3. Delivery Optimization cache cleared.
 4. WinSxS component store cleaned via DISM.
-5. `Windows.old` removed if present AND older than 10 days AND user confirms.
-6. Storage Sense enabled with sensible defaults if user opts in.
-7. A `revert.ps1` — this module's revert is narrow (Storage Sense settings only; temp files gone are gone).
+5. `Windows.old` removed if present AND older than 10 days AND user confirmed.
+6. Recycle Bin emptied if user confirmed.
+7. Storage Sense enabled if user opted in.
+8. A `revert.ps1` — this module's revert is narrow (Storage Sense settings only; temp files gone are gone).
 
 ## Flow
 
@@ -35,31 +36,112 @@ Run `ps/diagnose/storage.ps1`. It computes sizes (not deletes) for each candidat
 | WER queue | `C:\ProgramData\Microsoft\Windows\WER\ReportQueue`, `ReportArchive` |
 | Browser caches | Chrome / Edge / Brave `%LOCALAPPDATA%\<vendor>\User Data\<profile>\Cache` |
 
-Emit total per source + top 20 largest single files.
+Emit total per source + top 20 largest single files. Also report `estimatedTotalGB` — the sum of everything the module would clean up under the AUTO umbrella plus the AUTO-eligible ASK items at their inferred defaults.
 
 ### 2. Categorize
 
-- **AUTO** — files in TEMP dirs older than 24 h, Delivery Optimization cache, WER queue, CBS logs older than 30 d.
-- **ASK** — Windows.old (destructive after 10 d default grace), Recycle Bin (contains user files), browser caches (kills sign-ins in some cases), Prefetch (very rarely worth cleaning; can slow next boot).
+- **AUTO** — files in TEMP dirs older than 24 h, Delivery Optimization cache, WER queue, CBS logs older than 30 d, browser caches (only if the browser is closed). These are the "temporary files, browser cache, old crash reports" bucket in the summary question.
+- **ASK-USER** — Recycle Bin, Windows.old, DISM component cleanup (mention runtime), Storage Sense.
 - **NEVER** — `pagefile.sys`, `hiberfil.sys`, `swapfile.sys` (power module handles hibernate), `System Volume Information`, `Recovery`.
 
-### 3. Ask the user
+### 3. Ask the user, one at a time
 
-**Plain-English rule: show the user what gets freed and what the trade-off is, not the internal source name.** Substitute actual GB numbers into the copy at ask time.
+**Plain-English rule: show the user what gets freed and what the trade-off is, not the internal source name.** Substitute actual GB numbers into the copy at ask time. Use `AskUserQuestion` with `multiSelect: false` — one call per question.
 
-Grouped `AskUserQuestion`, `multiSelect: true`, ≤2 questions:
+---
 
-**Q1 — "Which of these do you want cleaned up?" (check all that apply — sizes are what we'd free)**
-- Leftover files from your previous Windows install (~X GB) — after this you can't roll back to the old Windows version, but you also won't be able to anyway after 10 days
-- Recycle Bin (~X GB) — empties everything you've thrown away
-- Web browser caches for Chrome / Edge / Brave (~X GB) — some sites will feel a bit slower the first time you visit them again while they re-cache
-- Windows' app-launch history file (~X GB) — makes Windows very slightly slower to launch programs for a few boots; usually not worth doing
+**Q1 — Summary opt-in**
 
-**Q2 — "Do you want Windows to auto-clean itself when your disk gets full?" (check all that apply)**
-- Yes, turn on Windows' auto-cleanup (it kicks in when your disk starts getting full)
-- Auto-empty the Recycle Bin for anything older than 30 days
-- Auto-delete files in Downloads that you haven't touched in 60 days (leave off if you park installers there)
-- For files stored in OneDrive: keep them in the cloud only if you haven't opened them in 30 days (they still show in File Explorer; downloaded on demand when you double-click)
+> "Delete about X GB of temporary files, browser cache, and old crash reports? (Doesn't touch your documents, photos, or downloads.)"
+
+Where X is `estimatedTotalGB` from diagnose — the AUTO bucket only. This is the entry-gate question.
+
+Answers:
+- `Yes` — apply all AUTO cleanup, then move on to Q2-Q5.
+- `No` — skip the whole module.
+- `Show me what changes` — print the source → size table and re-ask.
+
+*"I'm not sure" inference:* not offered. Consent gate.
+
+*Controls:* AUTO sources in `data/storage_sources.json`.
+
+---
+
+**Q2 — Recycle Bin**
+
+> "Empty the Recycle Bin? (There's about X GB in there right now. Anything you've thrown away in the last week will be gone for good.)"
+
+Where X is the Recycle Bin size from diagnose.
+
+*Skip if:* recycle bin is < 100 MB (barely worth asking).
+
+*"I'm not sure" inference:* If size > 5 GB → YES (space matters). If size 100 MB — 5 GB AND the newest file in bin is > 30 days old → YES. Otherwise → NO.
+
+*Controls:* `Clear-RecycleBin -Force` per-user (see gotchas for per-SID for all users).
+
+---
+
+**Q3 — Windows.old**
+
+> "Delete the leftover files from your previous Windows install? (About X GB. After this you can't roll back to the old Windows version — but you also can't after 10 days from install, so if it's here, that window has already closed.)"
+
+Where X is `Windows.old` folder size.
+
+*Skip if:* `C:\Windows.old` doesn't exist.
+
+*"I'm not sure" inference:* Folder is older than 10 days (`(Get-Date) - (Get-Item C:\Windows.old).CreationTime > 10 days`) → YES. Otherwise → NO (respect the rollback window).
+
+*Controls:* `takeown /f C:\Windows.old /r /d y` then `icacls C:\Windows.old /grant Administrators:F /t` then `Remove-Item -Recurse -Force C:\Windows.old`.
+
+---
+
+**Q4 — DISM component store cleanup**
+
+> "Compact the Windows update history? (Takes 5-15 minutes, uses one CPU core the whole time. Frees roughly X GB. You won't be able to uninstall Windows updates from before now — but you'll never actually want to.)"
+
+Where X is the recoverable size from `dism /online /cleanup-image /analyzecomponentstore`.
+
+*Skip if:* recoverable size < 500 MB.
+
+*"I'm not sure" inference:*
+- Free space < 15% → YES.
+- Free space 15-30% AND recoverable > 2 GB → YES.
+- Free space > 30% AND recoverable < 2 GB → NO.
+- On battery AND laptop → NO (defer to next AC-plugged run).
+
+*Controls:* `dism /online /cleanup-image /startcomponentcleanup`. `dism /resetbase` is only added if user explicitly agrees to a second, stronger prompt (irreversible).
+
+---
+
+**Q5 — Storage Sense**
+
+> "Turn on Windows' auto-cleanup? (Kicks in when your disk starts getting full — empties old files from your Recycle Bin, cleans temp files, and asks about your Downloads folder.)"
+
+*Skip if:* already enabled (`HKCU:\...\StorageSense\Parameters\StoragePolicy\01`).
+
+*"I'm not sure" inference:*
+- Disk < 512 GB → YES (small disks need the housekeeping).
+- Disk >= 512 GB AND free space > 40% → NO (no pressure).
+- Otherwise → YES.
+
+*Controls:* keys under `HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy`. Default Storage Sense config: Recycle Bin 30 d, Downloads NEVER (never auto-clean Downloads), OneDrive cloud-only for files not touched in 30 d.
+
+---
+
+### After all questions, show the decision summary
+
+```
+Storage cleanup — here's what I figured out:
+
+  Temp files, browser cache, crash reports (AUTO bucket):  4.2 GB
+  Recycle Bin:                        1.1 GB       YES  (you said yes)
+  Windows.old:                        (not present — skipped)
+  DISM cleanup:                       2.4 GB       YES  (auto: 22% free)
+  Storage Sense:                      turn ON      YES  (auto: 512 GB disk)
+
+Total to free: ~7.7 GB.
+Continue?  [Yes / No / Show me the list]
+```
 
 ### 4. Build plan JSON
 
@@ -78,7 +160,7 @@ Grouped `AskUserQuestion`, `multiSelect: true`, ≤2 questions:
 }
 ```
 
-`dismResetBase` — only if disk pressure is real (free space <15%). It's irreversible for future WinSxS rollback.
+`dismResetBase` — only if disk pressure is real (free space <15%) AND user explicitly consented to a second stronger prompt. It's irreversible for future WinSxS rollback.
 
 ### 5. Apply (elevated)
 
@@ -98,7 +180,7 @@ Table of source → bytes freed. Total. Path to snapshot + revert.
 
 - Files under `%TEMP%` may be open by long-running apps (browsers, IDEs). Use `Remove-Item -ErrorAction SilentlyContinue` and count skipped vs deleted.
 - Delivery Optimization cache: if you `Remove-Item` the folder while DoSvc is running, DoSvc recreates and refills it. Stop `DoSvc` first, remove, start.
-- DISM `/resetbase` makes existing Windows Update rollbacks impossible for THIS accumulated servicing — after it runs, you cannot uninstall the currently-installed cumulative update. Only run when free-space pressure is real. Ask user explicitly.
+- DISM `/resetbase` makes existing Windows Update rollbacks impossible for THIS accumulated servicing — after it runs, you cannot uninstall the currently-installed cumulative update. Only run when free-space pressure is real. Ask user explicitly (second confirm prompt) — one "yes" to component cleanup does NOT authorize resetbase.
 - `Windows.old` deletion via Explorer/CleanMgr often fails on `WindowsApps` subfolder due to TrustedInstaller-owned ACLs. The `takeown /r + icacls` combo is what works. Requires elevation.
 - `C:\Windows\SoftwareDistribution\Download` — safe to clean, but you must stop `wuauserv` first or Windows Update will re-lock files instantly. Restart wuauserv after.
 - Prefetch (`.pf` files) is used by `unused-apps` module to estimate last-launched time. Cleaning Prefetch WIPES that data. If `unused-apps` will run in this session, run it FIRST and skip Prefetch cleanup, or note the loss in the report.
@@ -114,7 +196,7 @@ Table of source → bytes freed. Total. Path to snapshot + revert.
 
 ## Machine profile branches
 
-- Free disk space (from `profile.disk[]` or fresh `Get-Volume C:`): if <15%, upgrade `dismResetBase` from opt-in to STRONGLY-SUGGESTED (still ask). If <5%, add Downloads-cleanup and old browser profiles to the ASK list even though they normally aren't.
+- Free disk space (from `profile.disk[]` or fresh `Get-Volume C:`): if <15%, tip Q4 (DISM) inference toward YES; if <5%, add Downloads-cleanup and old browser profiles to the ASK list even though they normally aren't.
 - SSD vs HDD (`profile.disk[].MediaType`): on HDD, skip Prefetch cleanup unconditionally (Prefetch matters MORE on HDD). On SSD, defrag is never suggested; TRIM is Windows-managed.
-- Small NVMe (256 GB or less): keep Storage Sense-suggested cleanup thresholds aggressive (Recycle 14 d, Downloads 30 d default when user opts in). Large SSD (1 TB+): 30 d / 60 d.
-- `profile.flags.isLaptop=true` AND battery: DISM `/startcomponentcleanup` is CPU-heavy; if AC not plugged, warn user before starting. `Win32_Battery.BatteryStatus` = 2 means AC.
+- Small NVMe (256 GB or less): keep Storage Sense-suggested cleanup thresholds aggressive (Recycle 14 d default when user opts in). Large SSD (1 TB+): 30 d default.
+- `profile.flags.isLaptop=true` AND battery: DISM `/startcomponentcleanup` is CPU-heavy; the Q4 inference tips NO when on battery. `Win32_Battery.BatteryStatus` = 2 means AC.

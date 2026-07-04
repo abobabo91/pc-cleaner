@@ -1,85 +1,82 @@
 {
-  "_comment": "Per-role suggested-app bundles as winget package IDs. The ninite-personalized module detects the user's role (see role_signals.json), reads which apps are already installed, and outputs a suggested `winget install --id X` list for each bundle that's active. NEVER auto-installs — the module always prints the copy-paste command for the user to run explicitly. Fields per bundle: role, description, apps (array of { id, name, category, optional (bool) }).",
-  "_alwaysInclude": "The 'always_useful' bundle is offered regardless of detected role. Skip individual entries the user already has.",
+  "_comment": "Per-role suggested-app bundles as winget package IDs. The ninite-personalized module reads which apps are already installed and emits one question per not-yet-installed suggestion (Yes / No / What's this?). NEVER auto-installs — module always writes a copy-paste command for the user to run explicitly.",
+  "_alwaysInclude": "The 'recommended-modern' bundle is offered regardless of detected role. It captures the good-practice baseline that any modern user benefits from (7-Zip, PowerToys, Everything, VLC, password manager, code editor, terminal). Skip individual entries the user already has.",
   "_wingetIdVerify": "winget IDs occasionally change (publisher renames, new suffixes). If an install command fails with 'no package found', run `winget search <name>` at runtime to resolve the current ID.",
+  "_appSchema": "Per-app fields: id (winget package ID), name (human), whyItMatters (one-sentence blurb shown in the ask), sizeMB (approx install size), publisher, category, commonAmong ('everyone' | 'developers' | 'creators' | 'gamers' | 'office workers'), optional (bool: skip in the fast recommendation pass), askOnlyIf (optional gate: 'local_media' = only ask if user answered 'local files' to the music/video usage runtime question).",
+  "_deliberatelyOmitted": "Password managers (Bitwarden, 1Password, etc.) are DELIBERATELY not in this bundle. Choosing a password manager is a personal decision with real consequences and pc-cleaner should not push a specific one. If the user asks for a suggestion, list Bitwarden (free), 1Password (paid) and KeePassXC (fully offline) with one line each — but do not include them in the automatic recommendation pass.",
+  "_singleChoiceCategories": "Browser: only Google Chrome is recommended (widely compatible, syncs). Image viewer: only IrfanView. If the user explicitly asks about alternatives (Firefox, Nomacs, etc.), list them, but the default recommendation is single-choice.",
   "bundles": [
+    {
+      "role": "recommended-modern",
+      "description": "Good-practice baseline for any modern PC. Offer to every user regardless of role — skip individual apps they already have. Based on the seed machine's setup 2026-07-04.",
+      "apps": [
+        { "id": "7zip.7zip", "name": "7-Zip", "whyItMatters": "Opens .zip / .rar / .7z / .tar.gz archives. Free. Windows' built-in archiver is worse in every way.", "sizeMB": 2, "publisher": "Igor Pavlov", "category": "utility", "commonAmong": "everyone" },
+        { "id": "Microsoft.PowerToys", "name": "Microsoft PowerToys", "whyItMatters": "Microsoft-made pack of Windows tweaks: window snap, color picker, image resizer, run-anywhere launcher, and more.", "sizeMB": 250, "publisher": "Microsoft", "category": "utility", "commonAmong": "everyone" },
+        { "id": "voidtools.Everything", "name": "Everything", "whyItMatters": "Instant filename search across your whole disk. Way faster than Windows Search — searches complete before you finish typing.", "sizeMB": 5, "publisher": "voidtools", "category": "utility", "commonAmong": "everyone" },
+        { "id": "VideoLAN.VLC", "name": "VLC media player", "whyItMatters": "Plays every video and audio format. Free.", "sizeMB": 45, "publisher": "VideoLAN", "category": "media", "commonAmong": "everyone", "askOnlyIf": "local_media" },
+        { "id": "IrfanSkiljan.IrfanView", "name": "IrfanView", "whyItMatters": "Fast image viewer with basic edits. Windows Photos is slow — this opens JPGs instantly.", "sizeMB": 4, "publisher": "Irfan Skiljan", "category": "media", "commonAmong": "everyone" },
+        { "id": "Audacity.Audacity", "name": "Audacity", "whyItMatters": "Free audio editor. Trim voice memos, remove background noise, convert formats.", "sizeMB": 130, "publisher": "Audacity Team", "category": "media", "commonAmong": "creators", "optional": true, "askOnlyIf": "local_media" },
+        { "id": "HandBrake.HandBrake", "name": "HandBrake", "whyItMatters": "Free video converter. Shrink big video files or convert formats.", "sizeMB": 45, "publisher": "The HandBrake Team", "category": "media", "commonAmong": "creators", "optional": true },
+        { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "whyItMatters": "Free screen recorder / streamer. Standard tool for tutorials and Twitch.", "sizeMB": 400, "publisher": "OBS Project", "category": "media", "commonAmong": "creators", "optional": true },
+        { "id": "Google.Chrome", "name": "Google Chrome", "whyItMatters": "Fast, universally-supported browser. Syncs across devices with a Google account.", "sizeMB": 300, "publisher": "Google", "category": "browser", "commonAmong": "everyone" },
+        { "id": "Microsoft.VisualStudioCode", "name": "Visual Studio Code", "whyItMatters": "Free code editor most developers use. Great even for editing config files or notes.", "sizeMB": 350, "publisher": "Microsoft", "category": "editor", "commonAmong": "developers" },
+        { "id": "Microsoft.WindowsTerminal", "name": "Windows Terminal", "whyItMatters": "Modern replacement for the black Command Prompt. Tabs, colors, better fonts.", "sizeMB": 80, "publisher": "Microsoft", "category": "terminal", "commonAmong": "developers" },
+        { "id": "Zoom.Zoom", "name": "Zoom", "whyItMatters": "Video meetings. You'll need it as soon as someone sends a Zoom invite.", "sizeMB": 240, "publisher": "Zoom", "category": "communication", "commonAmong": "everyone", "optional": true },
+        { "id": "Discord.Discord", "name": "Discord", "whyItMatters": "Chat / voice / video app popular with gamers, hobby communities, and some workplaces.", "sizeMB": 350, "publisher": "Discord Inc.", "category": "communication", "commonAmong": "gamers", "optional": true },
+        { "id": "SlackTechnologies.Slack", "name": "Slack", "whyItMatters": "Work chat. Only needed if your workplace uses it.", "sizeMB": 200, "publisher": "Slack Technologies", "category": "communication", "commonAmong": "office workers", "optional": true },
+        { "id": "yt-dlp.yt-dlp", "name": "yt-dlp", "whyItMatters": "Command-line downloader for YouTube and many other video sites. Free.", "sizeMB": 30, "publisher": "yt-dlp", "category": "utility", "commonAmong": "creators", "optional": true }
+      ]
+    },
     {
       "role": "dev",
       "description": "General-purpose software development.",
       "apps": [
-        { "id": "Git.Git", "name": "Git", "category": "vcs" },
-        { "id": "GitHub.cli", "name": "GitHub CLI", "category": "vcs" },
-        { "id": "Microsoft.VisualStudioCode", "name": "Visual Studio Code", "category": "editor" },
-        { "id": "Microsoft.WindowsTerminal", "name": "Windows Terminal", "category": "terminal" },
-        { "id": "Python.Python.3.12", "name": "Python 3.12", "category": "runtime", "verify": "Version pin — bump to newest active branch periodically" },
-        { "id": "OpenJS.NodeJS.LTS", "name": "Node.js LTS", "category": "runtime" },
-        { "id": "Docker.DockerDesktop", "name": "Docker Desktop", "category": "container", "optional": true },
-        { "id": "Postman.Postman", "name": "Postman", "category": "api-client", "optional": true },
-        { "id": "JetBrains.Toolbox", "name": "JetBrains Toolbox", "category": "editor", "optional": true },
-        { "id": "GnuWin32.Make", "name": "GNU Make", "category": "build" },
-        { "id": "Neovim.Neovim", "name": "Neovim", "category": "editor", "optional": true }
+        { "id": "Git.Git", "name": "Git", "whyItMatters": "Version control. Almost every dev project uses it.", "sizeMB": 320, "publisher": "The Git Project", "category": "developer", "commonAmong": "developers" },
+        { "id": "GitHub.cli", "name": "GitHub CLI", "whyItMatters": "Run GitHub actions (create PRs, review, merge) from the terminal.", "sizeMB": 55, "publisher": "GitHub", "category": "developer", "commonAmong": "developers" },
+        { "id": "Python.Python.3.12", "name": "Python 3.12", "whyItMatters": "Python runtime. Ubiquitous for scripts, data, AI.", "sizeMB": 130, "publisher": "Python Software Foundation", "category": "developer", "commonAmong": "developers", "verify": "Bump version pin to newest active branch periodically" },
+        { "id": "OpenJS.NodeJS.LTS", "name": "Node.js LTS", "whyItMatters": "JavaScript runtime. Needed for anything front-end or npm-based.", "sizeMB": 90, "publisher": "OpenJS Foundation", "category": "developer", "commonAmong": "developers" },
+        { "id": "Docker.DockerDesktop", "name": "Docker Desktop", "whyItMatters": "Run isolated Linux containers on Windows.", "sizeMB": 800, "publisher": "Docker Inc.", "category": "developer", "commonAmong": "developers", "optional": true },
+        { "id": "Postman.Postman", "name": "Postman", "whyItMatters": "GUI for testing HTTP APIs.", "sizeMB": 350, "publisher": "Postman Inc.", "category": "developer", "commonAmong": "developers", "optional": true },
+        { "id": "JetBrains.Toolbox", "name": "JetBrains Toolbox", "whyItMatters": "Installer / updater for JetBrains IDEs (IntelliJ, PyCharm, WebStorm).", "sizeMB": 200, "publisher": "JetBrains", "category": "developer", "commonAmong": "developers", "optional": true },
+        { "id": "Microsoft.PowerShell", "name": "PowerShell 7", "whyItMatters": "Modern cross-platform PowerShell. Faster and better than the built-in one.", "sizeMB": 200, "publisher": "Microsoft", "category": "terminal", "commonAmong": "developers" }
       ]
     },
     {
       "role": "creative",
       "description": "Photo / video / audio / 3D creation.",
       "apps": [
-        { "id": "Adobe.Acrobat.Reader.64-bit", "name": "Adobe Acrobat Reader", "category": "pdf" },
-        { "id": "GIMP.GIMP", "name": "GIMP", "category": "image" },
-        { "id": "BlenderFoundation.Blender", "name": "Blender", "category": "3d" },
-        { "id": "DarkTable.DarkTable", "name": "darktable", "category": "photo-raw", "verify": "Publisher casing — sometimes shows as darktable.darktable" },
-        { "id": "Audacity.Audacity", "name": "Audacity", "category": "audio" },
-        { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "category": "capture" },
-        { "id": "VideoLAN.VLC", "name": "VLC media player", "category": "playback" }
+        { "id": "Adobe.Acrobat.Reader.64-bit", "name": "Adobe Acrobat Reader", "whyItMatters": "Reads PDFs. Free.", "sizeMB": 400, "publisher": "Adobe", "category": "utility", "commonAmong": "everyone" },
+        { "id": "GIMP.GIMP", "name": "GIMP", "whyItMatters": "Free Photoshop-like image editor.", "sizeMB": 320, "publisher": "The GIMP Team", "category": "media", "commonAmong": "creators" },
+        { "id": "BlenderFoundation.Blender", "name": "Blender", "whyItMatters": "Free professional 3D modeling / animation software.", "sizeMB": 700, "publisher": "Blender Foundation", "category": "media", "commonAmong": "creators" },
+        { "id": "DarkTable.DarkTable", "name": "darktable", "whyItMatters": "Free RAW photo editor (Lightroom alternative).", "sizeMB": 350, "publisher": "darktable", "category": "media", "commonAmong": "creators", "verify": "Publisher casing — sometimes shows as darktable.darktable" }
       ]
     },
     {
       "role": "gamer",
       "description": "Game launchers + overlays + capture.",
       "apps": [
-        { "id": "Valve.Steam", "name": "Steam", "category": "launcher" },
-        { "id": "EpicGames.EpicGamesLauncher", "name": "Epic Games Launcher", "category": "launcher", "optional": true },
-        { "id": "Discord.Discord", "name": "Discord", "category": "chat" },
-        { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "category": "capture", "optional": true },
-        { "id": "Nvidia.GeForceExperience", "name": "GeForce Experience", "category": "gpu-tools", "optional": true, "verify": "NVIDIA is moving toward the NVIDIA App as the successor" },
-        { "id": "TechPowerUp.MSIAfterburner", "name": "MSI Afterburner", "category": "monitoring", "optional": true }
+        { "id": "Valve.Steam", "name": "Steam", "whyItMatters": "The main PC game store / launcher.", "sizeMB": 400, "publisher": "Valve", "category": "utility", "commonAmong": "gamers" },
+        { "id": "EpicGames.EpicGamesLauncher", "name": "Epic Games Launcher", "whyItMatters": "Epic's game store. Gives away free games weekly.", "sizeMB": 500, "publisher": "Epic Games", "category": "utility", "commonAmong": "gamers", "optional": true },
+        { "id": "Nvidia.GeForceExperience", "name": "GeForce Experience", "whyItMatters": "NVIDIA driver updater + game overlay. Being replaced by NVIDIA App.", "sizeMB": 400, "publisher": "NVIDIA", "category": "utility", "commonAmong": "gamers", "optional": true, "verify": "NVIDIA is moving toward the NVIDIA App as the successor" },
+        { "id": "TechPowerUp.MSIAfterburner", "name": "MSI Afterburner", "whyItMatters": "GPU monitoring and overclocking. Free.", "sizeMB": 90, "publisher": "MSI", "category": "utility", "commonAmong": "gamers", "optional": true }
       ]
     },
     {
       "role": "office",
       "description": "Documents, meetings, storage, PDFs, passwords.",
       "apps": [
-        { "id": "Microsoft.Office", "name": "Microsoft Office", "category": "productivity", "optional": true, "verify": "May be Microsoft.Office or Microsoft365.Apps depending on the account tier" },
-        { "id": "Notion.Notion", "name": "Notion", "category": "notes", "optional": true },
-        { "id": "Zoom.Zoom", "name": "Zoom", "category": "meetings" },
-        { "id": "Google.GoogleDrive", "name": "Google Drive", "category": "storage", "optional": true },
-        { "id": "Adobe.Acrobat.Reader.64-bit", "name": "Adobe Acrobat Reader", "category": "pdf" },
-        { "id": "Bitwarden.Bitwarden", "name": "Bitwarden", "category": "passwords", "optional": true },
-        { "id": "KeePassXCTeam.KeePassXC", "name": "KeePassXC", "category": "passwords", "optional": true }
+        { "id": "Microsoft.Office", "name": "Microsoft Office", "whyItMatters": "Word / Excel / PowerPoint desktop apps.", "sizeMB": 5000, "publisher": "Microsoft", "category": "utility", "commonAmong": "office workers", "optional": true, "verify": "May be Microsoft.Office or Microsoft365.Apps depending on the account tier" },
+        { "id": "Notion.Notion", "name": "Notion", "whyItMatters": "Notes + wiki + database + tasks in one app.", "sizeMB": 250, "publisher": "Notion", "category": "utility", "commonAmong": "office workers", "optional": true },
+        { "id": "Google.GoogleDrive", "name": "Google Drive", "whyItMatters": "Sync Google Drive files to your PC.", "sizeMB": 250, "publisher": "Google", "category": "utility", "commonAmong": "office workers", "optional": true }
       ]
     },
     {
       "role": "student",
       "description": "Study, reference management, meetings.",
       "apps": [
-        { "id": "Zoom.Zoom", "name": "Zoom", "category": "meetings" },
-        { "id": "Zotero.Zotero", "name": "Zotero", "category": "reference-management" },
-        { "id": "Notion.Notion", "name": "Notion", "category": "notes" },
-        { "id": "Anki.Anki", "name": "Anki", "category": "study" },
-        { "id": "TheDocumentFoundation.LibreOffice", "name": "LibreOffice", "category": "productivity", "verify": "Publisher path — sometimes appears as LibreOffice.LibreOffice" }
-      ]
-    },
-    {
-      "role": "always_useful",
-      "description": "Universal quality-of-life utilities — offer to every user regardless of role.",
-      "apps": [
-        { "id": "7zip.7zip", "name": "7-Zip", "category": "archiver" },
-        { "id": "VideoLAN.VLC", "name": "VLC media player", "category": "playback" },
-        { "id": "Mozilla.Firefox", "name": "Mozilla Firefox", "category": "browser", "optional": true },
-        { "id": "Bitwarden.Bitwarden", "name": "Bitwarden", "category": "passwords", "optional": true },
-        { "id": "Microsoft.PowerToys", "name": "Microsoft PowerToys", "category": "utility" },
-        { "id": "Microsoft.PowerShell", "name": "PowerShell 7", "category": "shell" },
-        { "id": "voidtools.Everything", "name": "Everything (search)", "category": "search" }
+        { "id": "Zotero.Zotero", "name": "Zotero", "whyItMatters": "Reference / citation manager.", "sizeMB": 400, "publisher": "Corporation for Digital Scholarship", "category": "utility", "commonAmong": "everyone" },
+        { "id": "Anki.Anki", "name": "Anki", "whyItMatters": "Flashcard software using spaced repetition. Excellent for memorization.", "sizeMB": 150, "publisher": "Damien Elmes", "category": "utility", "commonAmong": "everyone" },
+        { "id": "TheDocumentFoundation.LibreOffice", "name": "LibreOffice", "whyItMatters": "Free Office suite. Reads .docx / .xlsx.", "sizeMB": 700, "publisher": "The Document Foundation", "category": "utility", "commonAmong": "everyone", "verify": "Publisher path — sometimes appears as LibreOffice.LibreOffice" }
       ]
     }
   ]

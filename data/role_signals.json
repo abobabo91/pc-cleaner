@@ -1,6 +1,6 @@
 {
   "_comment": "Signals used to detect the user's primary role(s) for the ninite-personalized module. Each signal has a weight; sum weights per role and pick the top-scoring role(s) above a threshold. A user can qualify for multiple roles (e.g. dev + gamer). Signal types: winget (installed via winget list), process (currently running or historical via UserAssist), registry (uninstall key presence), folder (path exists).",
-  "_threshold": "Score >= 3 = role active. Ties are OK — multi-role is a normal outcome. If no role scores >= 3, offer only the 'always_useful' bundle.",
+  "_threshold": "Score >= 3 = role active. Ties are OK — multi-role is a normal outcome. If no role scores >= 3, offer only the 'recommended-modern' bundle.",
   "_matchRule": "Case-insensitive substring match on pattern. For process signals, check both currently-running (Get-Process) and historically-used (UserAssist within last 90 days). For folder signals, existence + at least one file inside.",
   "roles": [
     {
@@ -24,6 +24,25 @@
         { "type": "winget", "pattern": "GitHub.cli", "weight": 2 },
         { "type": "winget", "pattern": "JetBrains.", "weight": 2 },
         { "type": "registry", "pattern": "HKLM:\\SOFTWARE\\Microsoft\\VisualStudio", "weight": 2 }
+      ]
+    },
+    {
+      "role": "modern-solo-dev",
+      "description": "Combines dev-tooling signals with the seed machine's shape — solo indie developer on Windows: VS Code, Windows Terminal, Git, Node OR Python OR both, a browser automation tool, and typically an LLM API vault. Distinct from 'dev' because it also weights productivity utilities (PowerToys, Everything) and an AI/API workflow. Triggers priority ordering of the recommended-modern bundle.",
+      "signals": [
+        { "type": "folder", "pattern": "%USERPROFILE%\\Desktop\\github", "weight": 3 },
+        { "type": "winget", "pattern": "Microsoft.VisualStudioCode", "weight": 3 },
+        { "type": "winget", "pattern": "Microsoft.WindowsTerminal", "weight": 2 },
+        { "type": "winget", "pattern": "Git.Git", "weight": 2 },
+        { "type": "winget", "pattern": "voidtools.Everything", "weight": 2 },
+        { "type": "winget", "pattern": "Microsoft.PowerToys", "weight": 2 },
+        { "type": "winget", "pattern": "7zip.7zip", "weight": 1 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\Desktop\\github\\tools\\vault", "weight": 4 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\Desktop\\github\\tools\\template_llm_api_calls", "weight": 3 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\Desktop\\github\\tools\\knowledge base", "weight": 2 },
+        { "type": "winget", "pattern": "Google.Chrome", "weight": 1 },
+        { "type": "winget", "pattern": "OpenJS.NodeJS.LTS", "weight": 2 },
+        { "type": "winget", "pattern": "Python.Python.3.12", "weight": 2 }
       ]
     },
     {

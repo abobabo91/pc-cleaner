@@ -9,10 +9,10 @@ Backed by seed session — see `knowledge_base/session_2026-07-04_lenovo_slim7pr
 At the end of this module the user has:
 1. Snapshot of every PnP device's current driver (`Get-PnpDevice` + `pnputil /enum-drivers`) BEFORE change.
 2. A table of stale drivers (age >18 months) on core components (WLAN, BT, GPU, chipset, audio, storage controller).
-3. A table of OEM-vs-subsystem mismatches — where the machine's OEM won't push updates for that card because the card's subsystem vendor ID belongs to a different OEM.
-4. For each stale/mismatched entry, a concrete download suggestion (URL to HP SoftPaq / Dell driver page / Lenovo download / Realtek WHQL / Intel WLAN / AMD Adrenalin) with version number and reason.
-5. NEVER auto-installs a driver. Suggests only. The user runs the installer.
-6. A `revert.ps1` — narrow scope: only rollback via `pnputil /delete-driver` if the user runs an install and wants to roll back a specific one.
+3. A table of OEM-vs-subsystem mismatches — where the machine's OEM won't push updates for that card.
+4. For each stale/mismatched entry, a concrete download suggestion (URL) with version + reason.
+5. NEVER auto-installs a driver .exe. Downloads-then-user-runs; every suggestion is a download link to review.
+6. A `revert.ps1` — narrow scope: instructions to `pnputil /delete-driver` if the user runs an install and wants to roll back.
 
 ## Flow
 
@@ -23,12 +23,13 @@ Run `ps/diagnose/drivers.ps1`. Emits:
 - `.oemInfo` — `.system.manufacturer` + `oem_pci_vendors.json` lookup → OEM VID.
 - `.mismatches[]` — devices where `subsysVid != oemVid` AND the device class is one where subsystem is the routing key (WLAN, BT, audio, camera). Not for GPU (dGPU comes from NVIDIA/AMD directly; iGPU from the CPU vendor).
 - `.stale[]` — drivers with `driverDate < today - 18 months` on device class in {`Net` (WLAN), `Bluetooth`, `Display`, `System` (chipset), `AudioEndpoint`/`Media`, `SCSIAdapter`/`SystemDevices` (storage controller), `Camera`}.
-- `.msGeneric[]` — devices for non-generic hardware (WLAN, BT, audio) where the driver provider is Microsoft (means vendor driver never installed or was uninstalled). Seed session Problem 2 hit this — BT running on Microsoft `bth.inf`.
+- `.msGeneric[]` — devices for non-generic hardware (WLAN, BT, audio) where the driver provider is Microsoft (means vendor driver never installed or was uninstalled).
 - `.crashCounts[]` — from `System` event log, WHEA and Kernel-Live-Dump events grouped by `Origin` module name over last 30 d. Cross-reference with `crashdumps` module output if that's run in the same session.
+- `.staleCount` — integer count of stale drivers for the introductory summary.
 
 ### 2. Categorize
 
-For each candidate emit `{severity ("HIGH"|"MEDIUM"|"LOW"), category ("stale"|"mismatch"|"generic"|"crash-linked"), suggestedSource, suggestedVersion, downloadUrl, notes}`.
+For each candidate emit `{severity ("HIGH"|"MEDIUM"|"LOW"), category ("stale"|"mismatch"|"generic"|"crash-linked"), suggestedSource, suggestedVersion, downloadUrl, notes, plainEnglishDescription, oemRoutingExplanation}`.
 
 Never label as "AUTO-APPLY". This module is always suggestion-only.
 
@@ -36,22 +37,89 @@ Never label as "AUTO-APPLY". This module is always suggestion-only.
 - **MEDIUM** — stale >24 months on any core component.
 - **LOW** — stale 18-24 months, no crash link.
 
-### 3. Ask the user
+### 3. Ask the user, conversationally
 
 **Plain-English rule: describe what each chip DOES ("your WiFi + Bluetooth chip") and why we're pointing at a different brand's site ("your laptop's own updater can't reach it"), not chip model numbers or "subsystem mismatch."** Keep raw VID/DID/subsys IDs, SoftPaq numbers, and URLs in the INTERNAL plan JSON.
 
-Single `AskUserQuestion` with `multiSelect: true`:
+Use `AskUserQuestion` with `multiSelect: false` — one call per question.
 
-**Q1 — "I found some outdated drivers on this PC. Want me to look up fresh download links for you?" (I won't install anything — you'll get URLs to review and run yourself. Check all you want links for.)**
+---
 
-Each option, in plain English, should read like:
+**Q1 — Summary opt-in**
 
-- "Your WiFi and Bluetooth chip — your laptop maker's usual updater can't reach this specific chip (it was made for a different laptop brand), so it's stuck on a 3-year-old driver. I found a fresher one on the actual chip maker's site." *(rank: HIGH)*
-- "Your graphics card — driver is from 18+ months ago. There's a newer one on the graphics-card maker's site." *(rank: MEDIUM)*
-- "Your laptop's sound chip — the current driver is generic Windows instead of the version from the maker of your speakers. Sometimes fixes crackle or missing bass features." *(rank: MEDIUM)*
-- "Your chipset (the main circuitry) — driver is old; new one might fix random freezes." *(rank: LOW)*
+> "I found [N] drivers on your computer that haven't been updated in over 2 years. Want me to look for newer versions?"
 
-The user checks what they want a link for. We do NOT install.
+Where N is `.staleCount`.
+
+Answers:
+- `Yes` — proceed with per-driver questions
+- `No` — skip the module
+- `Show me which ones` — print the table (device, current version, last date) then re-ask
+
+*Skip if:* `.staleCount = 0` AND `.mismatches.count = 0` AND `.crashCounts` has no linked driver — nothing to offer.
+
+*"I'm not sure" inference:* → YES if `.mismatches.count > 0` OR any HIGH-severity item exists. Otherwise → NO (drivers not-quite-current on a working machine isn't worth manually installing installers).
+
+---
+
+**Q2 through Q(1+K) — one question per HIGH / MEDIUM lead**
+
+Per lead, generate a question tailored to its category. Sample templates below — the diagnose script picks the right one from `data/driver_sources.json` per lead:
+
+**Q for OEM-mismatch WLAN/BT combo (Realtek-8822CE-style, seed session):**
+
+> "Your WiFi + Bluetooth chip is from Realtek, but this laptop's usual updater doesn't cover it because of how [Lenovo] labeled the card. I can grab a fresh driver directly from [HP]'s website (they use the same chip). It'll be a normal installer — I'll download it and you double-click to install. Want me to?"
+
+*Answers:* `Yes` / `No` / `Explain more`.
+
+`Explain more` prints: "Every WiFi card carries a small 'subsystem ID' that tells manufacturers' update tools 'this card belongs to my catalog.' Your Realtek card has the HP subsystem ID (`103C`) even though the laptop is a Lenovo. So Lenovo Vantage skips it, Windows Update ships the older Microsoft generic driver, and the card stays on a 2021 driver forever. HP's SoftPaq catalog has the up-to-date driver for exactly this card. It'll install cleanly — same chip, same firmware format."
+
+*"I'm not sure" inference:* → YES (this is the specific fix the seed session validated end to end).
+
+*Controls:* `data/driver_sources.json` entry with `urlPattern` for HP SoftPaqs — resolve `spNNNNNN` to `https://ftp.hp.com/pub/softpaq/spNNN501-NNN000/spNNNNNN.exe`. Download to `<snapshotDir>/drivers/downloads/`, do NOT auto-run.
+
+**Q for stale GPU driver:**
+
+> "Your graphics card driver is from over 18 months ago. Newer versions often fix game crashes and video-playback issues. Want the direct download link from [NVIDIA / AMD / Intel]?"
+
+*"I'm not sure" inference:* → YES if role_signals shows gamer, NO otherwise (silent stable driver is fine for office work).
+
+**Q for stale audio driver (generic Windows instead of vendor):**
+
+> "Your laptop's sound chip is running a generic Windows driver instead of the one from the sound-chip maker. This sometimes causes crackle, missing bass features, or Dolby Atmos not working. Want me to look up the vendor's version?"
+
+*"I'm not sure" inference:* → YES if user has complained about audio (out-of-band signal — the diagnose script has no way to know; treat as NO by default).
+
+**Q for stale chipset driver:**
+
+> "Your chipset (the main circuitry that ties the CPU to everything else) has an old driver. New ones sometimes fix random freezes. Want the direct download link?"
+
+*"I'm not sure" inference:* → YES if `.crashCounts` has any hits AND chipset driver is stale. Otherwise → NO.
+
+---
+
+### Rules for every driver question
+
+- Show the human-readable device name and plain-English what-it-does.
+- Show the current driver version + date and the newer available version.
+- Show the source we're pointing at (HP / Lenovo / NVIDIA / Realtek WHQL) and the reason we picked that source.
+- We NEVER auto-run any driver installer. The apply script downloads the file to the snapshot dir and prints the path with instructions to double-click.
+- Never suggest BIOS/UEFI updates here — SKILL.md forbids.
+
+### After all questions, show the decision summary
+
+```
+Driver suggestions — here's what I'll do:
+
+  WiFi + Bluetooth chip:    DOWNLOAD  (auto: OEM mismatch, HP SoftPaq sp162860)
+  Graphics driver:          DOWNLOAD  (you said yes)
+  Audio driver:             SKIP      (you said no)
+  Chipset:                  SKIP      (auto: no crash link)
+
+I'll download 2 installers to <snapshot>/drivers/downloads/.
+You run them yourself — I won't auto-install anything.
+Continue?  [Yes / No / Show me the list]
+```
 
 ### 4. Build plan JSON
 
@@ -59,21 +127,24 @@ The user checks what they want a link for. We do NOT install.
 {
   "reportOnly": true,
   "leads": [
-    {"device":"Realtek RTL8822CE","source":"HP SoftPaq","spNumber":"sp162860","version":"2024.10.230.600","url":"https://ftp.hp.com/pub/softpaq/sp162501-163000/sp162860.exe","reason":"..."}
+    {"device":"Realtek RTL8822CE","source":"HP SoftPaq","spNumber":"sp162860","version":"2024.10.230.600","url":"https://ftp.hp.com/pub/softpaq/sp162501-163000/sp162860.exe","reason":"OEM mismatch, seed session validated","downloadTo":"<snapshot>/drivers/downloads/sp162860.exe"}
   ]
 }
 ```
 
-### 5. Apply (no elevation required — this module writes a Markdown report, does not install)
+### 5. Apply (no elevation required — this module writes a Markdown report + downloads installers; does not install)
 
 Call `ps/apply/drivers.ps1 -Plan <path> -SnapshotDir <path>`. It writes:
 - `<snapshotDir>/drivers/report.md` — human-readable table with rank, reason, download URL, expected version.
+- `<snapshotDir>/drivers/downloads/<filename>.exe` — the downloaded installer for each lead the user approved. Never runs it.
 - `<snapshotDir>/drivers/pnputil-enum-drivers.txt` — `pnputil /enum-drivers` snapshot for revert reference.
-- `<snapshotDir>/drivers/revert.ps1` — instructions on how to `pnputil /delete-driver <oem##.inf> /uninstall /force` if a manual install breaks something, plus how to restore the pre-install driver from `pnputil` snapshot.
+- `<snapshotDir>/drivers/revert.ps1` — instructions on how to `pnputil /delete-driver <oem##.inf> /uninstall /force` if a manual install breaks something.
 
 ### 6. Report
 
-Print the report.md to the run log. Explicitly say: "run these installers yourself, do NOT let Windows Update auto-install the older Microsoft-signed generic while you're at it — pause Windows Update for the day before installing."
+Print the report.md to the run log. Explicitly say:
+- "The installer(s) are in `<snapshot>/drivers/downloads/`. Double-click to install. I did NOT auto-run them."
+- "Pause Windows Update for a day before installing — Windows may push the older Microsoft generic driver over your fresh one otherwise."
 
 ## Known gotchas
 
@@ -93,14 +164,14 @@ Print the report.md to the run log. Explicitly say: "run these installers yourse
 ## Curated defaults / Data files
 
 - `data/driver_sources.json` — array of `{oemVendorId, driverClass, sourcePriority: ["OEM-cross-vendor","Vendor-WHQL","OEM-native"], urlPattern, notes}`. Encodes HP SoftPaq URL derivation, known Dell/Lenovo/ASUS driver page anchors.
-- `data/known_bad_drivers.json` — driver versions (by inf name + version) known to cause specific bugcheck codes. E.g. `rtwlane.sys 2024.0.10.223` → 0x133 DPC_WATCHDOG. When the diagnose script sees one of these on the machine, HIGH severity.
+- `data/known_bad_drivers.json` — driver versions (by inf name + version) known to cause specific bugcheck codes.
 - `data/oem_pci_vendors.json` — see `profile.md`. Reused.
 
 ## Machine profile branches
 
-- `profile.flags.oemSubsystemMismatch=true`: raise every mismatched-subsystem driver to at least MEDIUM. Include in the ASK question with clear callout.
-- `profile.flags.hasComboWlanBt=true`: when suggesting a WLAN driver, ALWAYS suggest the combo package that also ships the BT driver — do not suggest WLAN-only. Cross-reference `power` module WLAN LPS flag clearing (needs redo after any WLAN driver install because installer re-populates the registry).
-- Desktop (`profile.flags.isLaptop=false`): OEM-cross-vendor is less common (retail motherboards). Just focus on stale drivers from motherboard maker (ASUS/Gigabyte/MSI/ASRock) and GPU vendor.
-- `profile.gpu[]` contains NVIDIA: prefer NVIDIA Studio driver on laptops with creator branding, Game Ready on gaming laptops. Detect via CPU suffix (`Creator Edition`, `H`/`HX` vs `HS`).
+- `profile.flags.oemSubsystemMismatch=true`: raise every mismatched-subsystem driver to at least MEDIUM. Include in Q2+ with clear callout.
+- `profile.flags.hasComboWlanBt=true`: when suggesting a WLAN driver, ALWAYS suggest the combo package that also ships the BT driver. Cross-reference `power` module WLAN LPS flag clearing (needs redo after any WLAN driver install because installer re-populates the registry).
+- Desktop (`profile.flags.isLaptop=false`): OEM-cross-vendor is less common (retail motherboards). Focus on stale drivers from motherboard maker (ASUS/Gigabyte/MSI/ASRock) and GPU vendor.
+- `profile.gpu[]` contains NVIDIA: prefer NVIDIA Studio driver on laptops with creator branding, Game Ready on gaming laptops.
 - `profile.gpu[].driverProvider` = AMD: prefer AMD Adrenalin over OEM-shipped AMD driver on desktop. On laptops with mux, some OEMs (Lenovo Slim Pro X) provide tuned AMD drivers — check the seed session's note.
-- Windows Insider build (`profile.os.build` >= a threshold, or `HKLM:\SOFTWARE\Microsoft\WindowsSelfHost\Applicability\BranchName != ""`): warn that Insider drivers can differ, and OEM installers may refuse to install. Suggest with caveat.
+- Windows Insider build: warn that Insider drivers can differ, and OEM installers may refuse to install. Suggest with caveat.

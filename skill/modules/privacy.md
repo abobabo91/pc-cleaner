@@ -1,6 +1,6 @@
 # module: privacy
 
-Tier: CORE. Auto-runs. Applies safe telemetry/ad/tracking registry tweaks. Asks ≤2 grouped questions for anything user-facing.
+Tier: CORE. Auto-runs. Applies safe telemetry/ad/tracking registry tweaks. Asks a single summary question up front, then two individual conversational questions for the ask-user items.
 
 ## Success criteria
 
@@ -9,10 +9,9 @@ At the end of this module the user has:
 2. Telemetry minimized (Diagnostic Data set to Required = 1, DiagTrack service already handled by `services`).
 3. Advertising ID disabled, Activity History disabled, Tailored Experiences off, Suggested Content in Settings off.
 4. Explorer / Start Menu ads (`SubscribedContent-*` keys) all off.
-5. Edge tracking prevention set to Strict, Edge personalized ads off, Edge news feed off.
-6. Copilot key (Win+C) disabled if the user opts in.
-7. Search-web-in-Start disabled if user opts in.
-8. A `revert.ps1` that restores every touched value.
+5. Edge tracking prevention set to Strict (if user opts in), Edge personalized ads off, Edge news feed off.
+6. Location services state matches user's answer.
+7. A `revert.ps1` that restores every touched value.
 
 ## Flow
 
@@ -22,35 +21,88 @@ Run `ps/diagnose/privacy.ps1`. It walks `data/privacy_keys.json` and emits curre
 
 ### 2. Categorize
 
-- **AUTO** — always apply, no question. Telemetry to Required. Ad ID off. Activity History off. Tailored Experiences off. Explorer / Start `SubscribedContent-*` all 0. Show sync provider notifications 0. Cortana search web 0. Windows tips 0.
-- **ASK-COPILOT** — Copilot key + Win+C shortcut + Copilot taskbar icon. Some users want it.
-- **ASK-EDGE** — Edge tracking prevention Strict, Edge personalized ads off, Edge news feed off, Edge startup boost off. Ask before touching, since Strict tracking prevention breaks some SSO flows.
+- **AUTO** — always apply, no question. Telemetry to Required. Ad ID off. Activity History off. Tailored Experiences off. Explorer / Start `SubscribedContent-*` all 0. Show sync provider notifications 0. Cortana search web 0. Windows tips 0. Copilot key + Win+C shortcut + taskbar icon (Copilot is unambiguously off-by-default in the seed-machine target profile).
+- **ASK-USER** — location services (Q2), Edge tracking prevention (Q3).
+- **SUMMARY** — one question up front so the user can bail out or see the list before any AUTO change happens (Q1).
 
 Never touch:
 - Anything under `HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend`.
 - SmartScreen keys (leave user default).
 - Anything that requires disabling Windows Update (out of scope — not a privacy module job).
 
-### 3. Ask the user
+### 3. Ask the user, conversationally
 
-**Plain-English rule: describe what the user sees or stops seeing, not the registry key name.** Keep raw paths (`HKCU:\...\ContentDeliveryManager\SubscribedContent-338388Enabled`) in the INTERNAL plan JSON.
+**Plain-English rule: describe what the user sees or stops seeing, not the registry key name.** Keep raw paths INTERNAL.
 
-`AskUserQuestion`, `multiSelect: true`, at most 2 questions:
+Use `AskUserQuestion` with `multiSelect: false` — one call per question.
 
-**Q1 — "Which of these do you want to turn off?" (check all that apply)**
-- The AI chat assistant on the taskbar (Copilot — the icon next to Search, and the shortcut Windows-key + C)
-- Web / Bing results showing up in the Start menu when you search for a file or app
-- "Tips" and "Get even more out of Windows" popups
-- Suggestions and ads on the lock screen (your background photo stays; only the extra text/ads go)
-- "Suggested content" ads shown inside the Settings app
+---
 
-**Q2 — "Edge browser: which of these do you want to turn off?" (check all that apply — skip this whole question if you don't use Edge)**
-- Block more trackers across websites (may sign you out of some sites like Teams or Office and you'll need to sign back in)
-- Turn off personalized ads based on what you browse
-- Turn off the news feed on the new-tab page (you'll get a blank / plain new tab instead)
-- Turn off the "start Edge quicker" background process (it silently keeps Edge running so it opens faster — turning it off means Edge opens a bit slower but doesn't sit in the background)
+**Q1 — Summary opt-in**
 
-Unchecked in either question → skip that key.
+> "Turn off Windows tracking, ads, and telemetry? (This makes Windows send less data to Microsoft. Everything I turn off is reversible.)"
+
+Answers:
+- `Yes` — apply all AUTO tweaks, then move on to Q2 and Q3.
+- `No` — skip the whole module (log "user opted out").
+- `Show me what changes` — print the list of AUTO keys with human descriptions (telemetry level, Ad ID, Activity History, Tailored Experiences, tips, lock-screen suggestions, Suggested Content in Settings, Copilot key, Bing/web results in Start) and then re-ask.
+
+*Skip if:* no ambiguity — this is the entry-gate question, always asked when the module runs.
+
+*"I'm not sure" inference:* not offered here. This is a consent gate; if the user is genuinely unsure, `Show me what changes` gives them the specifics.
+
+*Controls:* every AUTO entry in `data/privacy_keys.json`.
+
+---
+
+**Q2 — Location services**
+
+> "Does Windows need to know where you are? (Weather, Find My Device, and a few other apps use this. Most people can safely say no.)"
+
+*Skip if:* location services already disabled (`HKLM:\SYSTEM\CurrentControlSet\Services\lfsvc\Service\Configuration\Status\Value = 0`).
+
+*"I'm not sure" inference:* If `profile.flags.isLaptop=true` AND Find My Device is enabled (`HKLM:\SOFTWARE\Microsoft\Settings\FindMyDevice\LocationSyncEnabled = 1`) → YES (keep on — laptop-loss recovery is worth the tradeoff). Otherwise → NO.
+
+*Controls:* `HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location\Value` and the `lfsvc` service setting.
+
+---
+
+**Q3 — Edge tracking prevention**
+
+> "In the Edge browser, block more of the trackers that follow you across websites? (This is stricter than the default. Some sites like Teams or Office may make you sign in again after the change.)"
+
+*Skip if:* Edge is not installed OR the user's default browser is not Edge AND Edge shows no launches in the last 90 d (Edge is effectively unused; the tweak has no impact worth explaining).
+
+*"I'm not sure" inference:* Default browser check via `HKCU:\SOFTWARE\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice\ProgId`.
+- If `MSEdgeHTM` (Edge is default) → YES.
+- If Edge is installed but not default AND has been launched in last 90 d → YES.
+- If Edge is installed but never opened → NO (change has no impact).
+
+*Controls:* `HKCU:\SOFTWARE\Microsoft\Edge\TrackingPrevention\Level = 3` (Strict), plus Edge personalized ads off, Edge news feed off, Edge startup boost off — all bundled with this decision.
+
+---
+
+### After all questions, show the decision summary
+
+```
+Privacy tweaks — here's what I figured out:
+
+  Ad ID:                 OFF  (auto)
+  Activity History:      OFF  (auto)
+  Tailored Experiences:  OFF  (auto)
+  Windows tips:          OFF  (auto)
+  Lock-screen ads:       OFF  (auto)
+  Bing/web in Start:     OFF  (auto)
+  Copilot key & icon:    OFF  (auto)
+  Telemetry level:       Required (1)  (auto — Home can't go lower)
+  Location services:     KEEP ON  (auto: laptop, Find My Device enabled)
+  Edge tracking:         STRICT  (auto: Edge is your default browser)
+
+I'll change 24 registry values.
+Continue?  [Yes / No / Show me the list]
+```
+
+Anything the user challenges here → flip the decision, adjust the plan, ask them to confirm again.
 
 ### 4. Build plan JSON
 
@@ -71,8 +123,8 @@ Call `ps/apply/privacy.ps1 -Plan <path> -SnapshotDir <path>`. It:
 
 ### 6. Report
 
-- Count of keys touched grouped by category (telemetry / ads / Explorer / Edge / Copilot / Search).
-- Which of the ASK-* questions the user opted into.
+- Count of keys touched grouped by category (telemetry / ads / Explorer / Edge / Location / Copilot / Search).
+- Which of the ASK-USER questions the user opted into.
 - Snapshot + revert paths.
 - Note: some keys need explorer.exe restart or sign-out to take effect. Say so.
 
@@ -81,7 +133,7 @@ Call `ps/apply/privacy.ps1 -Plan <path> -SnapshotDir <path>`. It:
 - `AllowTelemetry` under `HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection` — on Win11 Home, this key exists but is enforced only up to level 1 (Required). Setting it to 0 (Security) is a Pro/Enterprise-only enforcement; on Home the OS silently treats 0 as 1. Not a failure, but don't claim it's off if it's not.
 - `HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager` — the `SubscribedContent-XXXXXX` keys have different numeric suffixes on different Windows builds (e.g. `-338388Enabled` for Start suggestions, `-353694Enabled` for Settings suggestions, `-338389Enabled` for tips). Do not hardcode — walk the subkeys and match by known suffix set from `data/privacy_keys.json`.
 - `Advertising ID` reset does not clear the current ID until sign-out. Note in report.
-- Edge tracking prevention Strict can break Microsoft Teams for Web SSO, some Office 365 apps. Ask before setting.
+- Edge tracking prevention Strict can break Microsoft Teams for Web SSO, some Office 365 apps. That's the whole point of the Q3 skip / inference — if Edge isn't used, we don't do it.
 - Copilot disable: on 24H2 the Copilot key is a distinct scancode (0x5D under `HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layout\Scancode Map`). Merely setting `HKCU:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot\TurnOffWindowsCopilot=1` disables the app but the physical key still glows / opens something. Full disable requires the scancode remap AND the policy AND removing the taskbar pin.
 - On Home edition, `HKLM:\SOFTWARE\Policies\...` GPO-style keys are often not enforced unless a corresponding GPO Preferences setting is present. Prefer the HKCU per-user Settings keys where equivalent exists.
 - `Windows.old` cleanup is NOT here — it lives in `storage`. Do not touch.
@@ -90,11 +142,11 @@ Call `ps/apply/privacy.ps1 -Plan <path> -SnapshotDir <path>`. It:
 
 ## Curated defaults / Data files
 
-- `data/privacy_keys.json` — array of `{path, name, type, desiredValue, category ("AUTO"|"ASK-COPILOT"|"ASK-EDGE"), reason, affectsExplorer: bool, requiresSignout: bool}`. Extend this file to add new privacy keys.
+- `data/privacy_keys.json` — array of `{path, name, type, desiredValue, category ("AUTO"|"ASK-LOCATION"|"ASK-EDGE"), reason, affectsExplorer: bool, requiresSignout: bool}`. Extend this file to add new privacy keys.
 
 ## Machine profile branches
 
 - `profile.os.edition` = Home: skip `HKLM:\SOFTWARE\Policies\...` keys that require Pro/Enterprise enforcement (log them as "would-set but Home ignores"). Prefer HKCU equivalents.
 - `profile.os.edition` = Enterprise/Education: assume MDM/Intune may already enforce some of these. Diagnose script tags `managedBy: "MDM"` if the corresponding `SOFTWARE\Microsoft\PolicyManager\current` key is set — do not overwrite those.
-- `profile.flags.isLaptop=true`: keep "Location services" alone (users often want Find My Device). Do not touch `HKLM:\SYSTEM\CurrentControlSet\Services\lfsvc\Service\Configuration\Status\Value`. That's a `services` decision, not privacy.
-- If Edge is not the default browser (`HKCU:\SOFTWARE\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice\ProgId` != `MSEdgeHTM`), still offer ASK-EDGE tweaks — Edge runs in the background for widgets even when not default.
+- `profile.flags.isLaptop=true`: default Q2 (location) toward KEEP if Find My Device is enrolled.
+- If Edge is not the default browser AND was never launched: skip Q3 entirely (no impact worth explaining).
