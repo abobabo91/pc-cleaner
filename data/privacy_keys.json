@@ -1,0 +1,195 @@
+{
+  "_comment": "Registry keys that reduce Windows telemetry / ads / tracking. Each entry: hive path, value name, target value, type, category, revert-safe (does removing it later break anything).",
+  "keys": [
+    {
+      "category": "telemetry",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+      "name": "AllowTelemetry",
+      "type": "DWord",
+      "value": 0,
+      "note": "0 = Security-only (Enterprise SKUs) / minimum on Home"
+    },
+    {
+      "category": "telemetry",
+      "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection",
+      "name": "AllowTelemetry",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "ad_id",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+      "name": "Enabled",
+      "type": "DWord",
+      "value": 0,
+      "note": "Advertising ID off"
+    },
+    {
+      "category": "activity_history",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+      "name": "EnableActivityFeed",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "activity_history",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+      "name": "PublishUserActivities",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "activity_history",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+      "name": "UploadUserActivities",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SubscribedContent-338388Enabled",
+      "type": "DWord",
+      "value": 0,
+      "note": "Start menu suggestions"
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SubscribedContent-338389Enabled",
+      "type": "DWord",
+      "value": 0,
+      "note": "Tips + tricks on lock screen"
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SubscribedContent-338393Enabled",
+      "type": "DWord",
+      "value": 0,
+      "note": "Settings app suggestions"
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SubscribedContent-353694Enabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SubscribedContent-353696Enabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SystemPaneSuggestionsEnabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "SilentInstalledAppsEnabled",
+      "type": "DWord",
+      "value": 0,
+      "note": "Prevents silent bundled app installs (Candy Crush etc.)"
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "OemPreInstalledAppsEnabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "PreInstalledAppsEnabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "explorer_ads",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+      "name": "PreInstalledAppsEverEnabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "search_web",
+      "path": "HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer",
+      "name": "DisableSearchBoxSuggestions",
+      "type": "DWord",
+      "value": 1,
+      "note": "Turn off Bing web results in Start search"
+    },
+    {
+      "category": "search_web",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search",
+      "name": "BingSearchEnabled",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "search_web",
+      "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search",
+      "name": "CortanaConsent",
+      "type": "DWord",
+      "value": 0
+    },
+    {
+      "category": "copilot",
+      "path": "HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot",
+      "name": "TurnOffWindowsCopilot",
+      "type": "DWord",
+      "value": 1
+    },
+    {
+      "category": "recall",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI",
+      "name": "DisableAIDataAnalysis",
+      "type": "DWord",
+      "value": 1,
+      "note": "Turn off Windows Recall on supported machines"
+    },
+    {
+      "category": "recall",
+      "path": "HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI",
+      "name": "DisableAIDataAnalysis",
+      "type": "DWord",
+      "value": 1
+    },
+    {
+      "category": "edge_tracking",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+      "name": "TrackingPrevention",
+      "type": "DWord",
+      "value": 2,
+      "note": "2 = Balanced, 3 = Strict. Only writes if Edge policy path exists."
+    },
+    {
+      "category": "wifi_analytics",
+      "path": "HKLM:\\SOFTWARE\\Microsoft\\WcmSvc\\wifinetworkmanager\\config",
+      "name": "AutoConnectAllowedOEM",
+      "type": "DWord",
+      "value": 0,
+      "note": "Turn off Wi-Fi Sense OEM opt-in"
+    },
+    {
+      "category": "location",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors",
+      "name": "DisableLocation",
+      "type": "DWord",
+      "value": 1,
+      "note": "Global location off. Ask user - some users want Weather/Maps to work."
+    }
+  ],
+  "notes": {
+    "ask_user": ["location", "edge_tracking"],
+    "apply_silently": ["telemetry", "ad_id", "activity_history", "explorer_ads", "search_web", "wifi_analytics", "copilot", "recall"]
+  }
+}
