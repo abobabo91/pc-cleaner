@@ -33,10 +33,22 @@ Never touch:
 
 ### 3. Ask the user
 
+**Plain-English rule: describe what the user sees or stops seeing, not the registry key name.** Keep raw paths (`HKCU:\...\ContentDeliveryManager\SubscribedContent-338388Enabled`) in the INTERNAL plan JSON.
+
 `AskUserQuestion`, `multiSelect: true`, at most 2 questions:
 
-- **Which of these do you want disabled?** (options: "Copilot (Win+C shortcut and taskbar icon)", "Web results in Start Menu search", "Bing search suggestions", "Windows tips and Get Even More Out Of Windows notifications", "Lock screen ads and suggestions", "Suggested content in Settings")
-- **Edge browser tweaks?** (options: "Set tracking prevention to Strict", "Turn off personalized ads based on browsing", "Turn off news feed on new tab", "Turn off startup boost")
+**Q1 — "Which of these do you want to turn off?" (check all that apply)**
+- The AI chat assistant on the taskbar (Copilot — the icon next to Search, and the shortcut Windows-key + C)
+- Web / Bing results showing up in the Start menu when you search for a file or app
+- "Tips" and "Get even more out of Windows" popups
+- Suggestions and ads on the lock screen (your background photo stays; only the extra text/ads go)
+- "Suggested content" ads shown inside the Settings app
+
+**Q2 — "Edge browser: which of these do you want to turn off?" (check all that apply — skip this whole question if you don't use Edge)**
+- Block more trackers across websites (may sign you out of some sites like Teams or Office and you'll need to sign back in)
+- Turn off personalized ads based on what you browse
+- Turn off the news feed on the new-tab page (you'll get a blank / plain new tab instead)
+- Turn off the "start Edge quicker" background process (it silently keeps Edge running so it opens faster — turning it off means Edge opens a bit slower but doesn't sit in the background)
 
 Unchecked in either question → skip that key.
 

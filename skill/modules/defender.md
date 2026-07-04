@@ -41,13 +41,33 @@ Run `ps/diagnose/defender.ps1`. Emits:
 
 ### 3. Ask the user
 
+**Plain-English rule: describe folders by which tool creates them ("the folder Node.js puts downloaded packages in"), not by their path or ecosystem name.** Keep raw paths INTERNAL. Only show folders that actually exist on the machine.
+
 `AskUserQuestion`, `multiSelect: true`, ≤3 questions grouped by role:
 
-- **Package manager caches to exclude?** — checkboxes for each present: pnpm-store, npm-cache, yarn cache, NuGet packages, pip cache, poetry cache.
-- **Language toolchains to exclude?** — Cargo, .rustup, Gradle, .m2, Go modules, JetBrains caches.
-- **Docker / WSL / per-repo?** — WSL vhdx (Ubuntu / Docker), Docker data root, node_modules across N detected repos, .next/dist/build/target across N repos.
+**Q1 — "Tell antivirus to skip the folders where these tools cache downloaded packages? (this speeds up 'install' commands a lot)" (check all that apply)**
+- The folder Node.js / pnpm uses for downloaded packages
+- The folder npm uses for its cache
+- The folder Yarn uses for its cache
+- The folder .NET / NuGet uses for downloaded packages
+- The folder Python uses for pip downloads
+- The folder Python Poetry uses for its cache
 
-Warn in the question copy: "Excluded paths are not scanned in real time. Do this only for build caches you trust — not for random Downloads." No auto-tick.
+**Q2 — "Tell antivirus to skip the folders where language toolchains live?" (check all that apply)**
+- Rust's downloaded crates
+- The Rust toolchain itself (rustup)
+- Gradle build cache
+- Maven's local repository
+- The folder Go uses for downloaded modules
+- JetBrains IDE caches (IntelliJ, PyCharm, WebStorm, etc.)
+
+**Q3 — "Skip Linux VMs, Docker, and your own project build folders?" (check all that apply)**
+- The Linux virtual disk (WSL) — the file where your Ubuntu / Debian lives; big and constantly written
+- Docker's virtual disk — same story for containers
+- The `node_modules` folders inside your git repos (I found N of them)
+- Build output folders in your repos (`.next`, `dist`, `build`, `target` — I found some in N repos)
+
+Warn in the question copy: "These folders will no longer be scanned in real time. Only check the ones you actually trust — never a general Downloads or Documents folder." No auto-tick.
 
 ### 4. Build plan JSON
 

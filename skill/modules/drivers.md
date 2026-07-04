@@ -38,9 +38,18 @@ Never label as "AUTO-APPLY". This module is always suggestion-only.
 
 ### 3. Ask the user
 
+**Plain-English rule: describe what each chip DOES ("your WiFi + Bluetooth chip") and why we're pointing at a different brand's site ("your laptop's own updater can't reach it"), not chip model numbers or "subsystem mismatch."** Keep raw VID/DID/subsys IDs, SoftPaq numbers, and URLs in the INTERNAL plan JSON.
+
 Single `AskUserQuestion` with `multiSelect: true`:
 
-- **Which driver leads do you want the download links + version numbers for?** — checkbox per candidate; each option shows: `[HIGH] Realtek RTL8822CE WLAN — Lenovo won't update (HP subsystem), current driver May 2021, latest HP SoftPaq sp162860 Oct 2024`.
+**Q1 — "I found some outdated drivers on this PC. Want me to look up fresh download links for you?" (I won't install anything — you'll get URLs to review and run yourself. Check all you want links for.)**
+
+Each option, in plain English, should read like:
+
+- "Your WiFi and Bluetooth chip — your laptop maker's usual updater can't reach this specific chip (it was made for a different laptop brand), so it's stuck on a 3-year-old driver. I found a fresher one on the actual chip maker's site." *(rank: HIGH)*
+- "Your graphics card — driver is from 18+ months ago. There's a newer one on the graphics-card maker's site." *(rank: MEDIUM)*
+- "Your laptop's sound chip — the current driver is generic Windows instead of the version from the maker of your speakers. Sometimes fixes crackle or missing bass features." *(rank: MEDIUM)*
+- "Your chipset (the main circuitry) — driver is old; new one might fix random freezes." *(rank: LOW)*
 
 The user checks what they want a link for. We do NOT install.
 

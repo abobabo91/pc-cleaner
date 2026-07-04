@@ -33,13 +33,20 @@ Run `ps/diagnose/ninite-personalized.ps1`. It emits:
 
 ### 3. Ask the user
 
+**Plain-English rule: describe roles in words the user would use for themselves ("you code", "you edit photos and video"), not internal role IDs like "dev / sysadmin".** Keep role IDs and winget package IDs INTERNAL.
+
 Single `AskUserQuestion`, `multiSelect: true`:
 
-- **Detected roles: dev (0.8), sysadmin (0.4). Which roles should we suggest companion apps for?** — options are the detected roles + "Show me apps from another role I didn't get" (opens a follow-up).
+**Q1 — "Based on what's installed, it looks like you code and do some sysadmin work. Should I suggest a few companion apps that fit those?" (I won't install anything — you'll get a copy-paste list)**
+- Yes, suggest apps for coding
+- Yes, suggest apps for sysadmin / IT work
+- Also show me suggestions for something else (photo / video editing, gaming, office work)
+- Skip suggestions
 
 Optionally a follow-up question:
 
-- **Which of these apps would you like copy-paste install commands for?** — checkbox per suggested app, with a one-line reason each.
+**Q2 — "Which of these do you want copy-paste install commands for?" (check all that apply — each option shows the app plus a one-line reason)**
+- Checkbox per suggested app, e.g. "Windows Terminal — a modern replacement for the black Command Prompt window"
 
 ### 4. Build plan JSON
 

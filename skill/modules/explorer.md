@@ -36,13 +36,15 @@ Run `ps/diagnose/explorer.ps1`. Reads current values of the keys in `data/explor
 
 ### 3. Ask the user
 
+**Plain-English rule: describe what the change LOOKS like, not the registry name.** Keep raw values (`TaskbarAl=0`, the classic-menu CLSID) INTERNAL.
+
 Single grouped `AskUserQuestion`, `multiSelect: true`:
 
-- **Which Explorer tweaks do you want?** — options:
-  - "Windows 10 style right-click menu (no 'Show more options')"
-  - "Taskbar aligned Left (Windows 10 style)"
-  - "Show hidden files"
-  - "Show empty drives in This PC"
+**Q1 — "Which of these tweaks do you want?" (check all that apply)**
+- Bring back the old right-click menu (the one that shows all options at once, instead of the short list with "Show more options" at the bottom)
+- Line up the Start button and taskbar icons on the left side (like Windows 10), instead of the middle
+- Show hidden files and folders in File Explorer (warning: this also shows the confusing AppData folder — leave off if unsure)
+- Show empty drives / card readers / SD slots even when nothing is plugged in
 
 Only apply what the user checks.
 

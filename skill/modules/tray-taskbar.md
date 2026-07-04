@@ -31,11 +31,15 @@ Run `ps/diagnose/tray-taskbar.ps1`. Emits:
 
 ### 3. Ask the user
 
+**Plain-English rule: talk about "the row of icons at the bottom" and "the little icons next to the clock," not `Taskband` / `NotifyIconSettings`.** Keep the raw registry hashes and `shell:AppsFolder` identities INTERNAL. Show apps by the name the user sees, not their package family.
+
 `AskUserQuestion`, `multiSelect: true`, ≤3 questions:
 
-- **Unpin from taskbar** — checkbox per currently-pinned app: "Microsoft Edge", "Store", "Mail", "Copilot", "Xbox", ... plus any third-party pins found.
-- **Tray icons — promote to always visible** (show, not hide) — checkbox per known tray app currently in overflow: password manager, VPN, Discord, Slack, notification apps.
-- **Tray icons — demote to overflow** — checkbox per currently-shown tray icon the user wants hidden: OneDrive, Backup agent, printer spooler, Realtek Audio, etc.
+**Q1 — "Which of these do you want to unpin from the taskbar?" (this just removes the icon from the bar at the bottom — the app itself is not uninstalled)** — checkbox per currently-pinned app, shown by its friendly name: "Microsoft Edge", "Microsoft Store", "Mail", "Copilot", "Xbox", any other pins found.
+
+**Q2 — "Which of the little icons next to the clock do you want to always see?" (right now these live under the little up-arrow — check the ones you'd rather have visible all the time)** — checkbox per detected app currently hidden: password manager (1Password, Bitwarden), VPN, Discord, Slack, notification apps.
+
+**Q3 — "Which of the currently-visible icons next to the clock do you want to tuck away?" (they move under the little up-arrow — still there, just not always taking up space)** — checkbox per currently-shown icon: OneDrive, your backup tool, the audio-panel icon, printer icons, etc.
 
 Skip any Windows-built-in taskbar buttons (Widgets, Chat, Copilot, Task View, Search) if the `explorer` module already handled them.
 

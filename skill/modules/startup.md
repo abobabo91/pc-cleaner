@@ -45,14 +45,41 @@ For each entry emit `{source, name, command, publisher, signed, installedApp, en
 
 ### 3. Ask the user
 
-Use `AskUserQuestion` with `multiSelect: true`, ≤4 questions, grouped:
+**Plain-English rule: describe what happens from the user's perspective, not the technical autostart name.** Keep raw app names (`Spotify.exe`, `GoogleUpdate`, `RtkAudUService`) in the INTERNAL plan JSON; the user sees the app the way they know it.
 
-- **Do you want these to launch at login?** — Slack, Discord, Steam, Epic Games Launcher, Spotify, other chat apps.
-- **Which updaters can wait until you launch the app?** — GoogleUpdate, EdgeUpdate, JavaUpdate, Adobe ARM, Brave update.
-- **Cloud sync at boot?** — OneDrive, Dropbox, Google Drive, iCloud, MEGA.
-- **OEM & hardware helpers?** — Lenovo Vantage, Dell Command Update, ASUS Armoury Crate, HP Support Assistant, RGB software (iCUE, Aura, SignalRGB), NVIDIA App, AMD Adrenalin.
+Use `AskUserQuestion` with `multiSelect: true`, ≤4 questions, grouped. Adjust items to what's actually installed on THIS machine.
 
-Unchecked → tip toward DISABLE. Checked → KEEP.
+**Q1 — "Which of these do you want to open by themselves when you turn on the PC?" (check all that apply)**
+- Slack
+- Discord
+- Steam
+- Epic Games (or another game launcher)
+- Spotify
+- Your other chat / messaging apps
+
+Anything you don't check → we'll stop it from launching at startup. You can still open it from the Start menu any time.
+
+**Q2 — "These are silent updater helpers that run at every boot. Do you want any of them to keep running in the background?" (usually you can uncheck everything — the apps still update themselves when you open them)**
+- Google's updater (for Chrome)
+- Microsoft Edge's updater
+- Java's updater
+- Adobe's updater
+- Brave's updater
+
+**Q3 — "Which cloud sync apps do you want to start automatically at login?" (check the ones you actively use)**
+- OneDrive
+- Dropbox
+- Google Drive
+- iCloud
+- MEGA
+
+**Q4 — "Laptop maker's helpers and hardware tools — which should start with Windows?" (check the ones you actually open or need)**
+- Your laptop maker's own app (Lenovo Vantage / HP Support Assistant / Dell Command Update / ASUS Armoury Crate) — pushes firmware and warranty notifications
+- RGB / lighting software (iCUE, Aura, SignalRGB)
+- NVIDIA App / GeForce Experience
+- AMD Adrenalin
+
+Unchecked → tip toward DISABLE. Checked → KEEP. Keep raw autostart names (`Spotify`, `GoogleUpdate`, `LenovoVantageService`, etc.) INTERNAL — used in the plan JSON and log, never shown to the user.
 
 ### 4. Build plan JSON
 

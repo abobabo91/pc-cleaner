@@ -29,14 +29,38 @@ Never override a KEEP-TRIPWIRE.
 
 ### 3. Batch the MAYBEs into ≤4 grouped multi-select questions
 
-Real forks that came up on the seeded machine (adjust to what YOU see on the current machine):
+**Plain-English rule: describe what the thing is FOR, not its technical name.** No `SMB`, `MDM`, `HKCU`, `WSearch`, `ssh-agent` etc. in the visible question text.
 
-- **Peripherals**: printer/scanner? Windows Hello? auto-brightness? Dolby Atmos?
-- **Networking & sharing**: SMB share host? Miracast/DLNA cast? Windows VPN dialer? IPv6 tunneling needed?
-- **Microsoft ecosystem**: OneDrive? Office desktop? Edge? Copilot / UWP Mail?
-- **Extras**: keep Windows Search indexing? enable ssh-agent? still using Dropbox? still using Comet browser?
+Ask exactly this shape (adjust items to what's actually installed on THIS machine):
 
-Use `AskUserQuestion` with `multiSelect: true`. Anything the user does NOT check → tip toward DISABLE.
+**Q1 — "What do you actually use on this computer?" (check all that apply)**
+- I print or scan documents from this computer
+- I unlock this laptop with my face or fingerprint
+- My laptop's screen dims automatically in dim light (I want that)
+- I use surround sound / Dolby Atmos on speakers or headphones
+
+**Q2 — "How do you use the network?" (check all that apply)**
+- I share files or folders from this computer so other devices on my WiFi can open them
+- I sometimes cast my screen wirelessly to a TV
+- I sometimes play music/video from this laptop to a wireless speaker or smart TV
+- I use the built-in Windows VPN feature (not OpenVPN or a separate VPN app)
+- I play online games or use apps that specifically require IPv6 (very rare — say no if unsure)
+
+**Q3 — "Which Microsoft things do you actually use?" (check all that apply)**
+- OneDrive — even just occasionally
+- Word / Excel / PowerPoint installed as desktop apps (not just in the browser)
+- Microsoft Edge browser (as my main or backup browser)
+- Windows Copilot, the new Mail app, or the Calendar app
+
+**Q4 — "Last few things:" (check all that apply)**
+- Keep Windows' file search working in the Start menu (uses ~200 MB of RAM constantly — turn off if you use Everything or don't rely on Start search)
+- I use Git or SSH keys from the command line (turns on the key helper so you don't retype passphrases)
+- I still actively use Dropbox
+- I use Comet (Perplexity's browser)
+
+Use `AskUserQuestion` with `multiSelect: true`. Anything the user does NOT check → tip toward DISABLE. Anything they check → mark KEEP-FOR-YOU and skip the disable.
+
+Keep the raw service names (`Spooler`, `WSearch`, `LanmanServer`, etc.) INTERNAL — used in the plan JSON and log, never shown to the user.
 
 ### 4. Build the plan JSON
 

@@ -27,6 +27,20 @@ If the user asked in natural language ("clean my PC", "make it faster") without 
 4. **Explain every decision** in the run log. `[APPLY] <what> — reason: <why>`. No mystery meat.
 5. **Never touch tripwire services / settings.** See `data/services_tripwire.json`. If a user tries to force one via a flag, explain the risk and refuse without `--iknowwhatimdoing`.
 6. **Additive optional modules only apply if opted in.** The user's iPhone doesn't get their apps rearranged because they said "clean my PC".
+7. **All user-facing questions must be plain English, informal.** Never use technical names in what the user reads. Describe things from the user's perspective ("Do you share files from this computer so other people on your WiFi can access them?"), not the technical name ("Enable SMB server?"). If a term is unavoidable, add a parenthetical explanation ("this is very rare", "used by only a few games"). No jargon: no `MDM`, `S3`, `HKCU`, `SubsystemVendor`, `LPS flags`, `Prefetch`, `stornvme`, etc. in the question text itself.
+
+Good vs bad examples:
+
+| Bad (technical) | Good (plain English) |
+|---|---|
+| "Enable SMB server?" | "Do you share files from this computer with other devices on your WiFi?" |
+| "IPv6 tunneling needed (Teredo)?" | "Do you play online games or use apps that specifically need IPv6? (very rare — say no if unsure)" |
+| "Windows Hello / biometric?" | "Do you unlock this laptop with your face or fingerprint?" |
+| "Modern Standby wake events?" | "When you close the lid, do you want the laptop to keep checking email and updating in the background?" |
+| "Enable ssh-agent?" | "Do you use Git or SSH from the command line? (this makes the passphrase remembered so you don't retype it)" |
+| "WSearch (Windows indexed search)?" | "Do you use the Start menu to search for files and open them?" |
+| "OneDrive sync?" | "Do you use OneDrive — even occasionally?" |
+| "Miracast / DLNA / SSDP?" | "Do you ever cast your screen wirelessly to a TV, or play music to a wireless speaker?" |
 
 ## Module tiers
 

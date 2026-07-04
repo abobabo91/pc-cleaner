@@ -32,21 +32,25 @@ Run `ps/diagnose/network.ps1`. Emits:
 
 ### 3. Ask the user
 
-`AskUserQuestion`, `multiSelect: true`, ≤3 questions:
+**Plain-English rule: DNS is "who translates website names into addresses"; skip protocol acronyms in the visible copy.** Keep raw provider IPs and adapter names INTERNAL.
 
-- **DNS provider (both IPv4 and IPv6)** — options (single-select via `multiSelect: false` for this one):
-  - "Leave DHCP-provided DNS (default)"
-  - "Cloudflare (1.1.1.1 / 2606:4700:4700::1111)"
-  - "Quad9 (9.9.9.9 / 2620:fe::fe)"
-  - "Google (8.8.8.8 / 2001:4860:4860::8888)"
-  - "AdGuard Family (94.140.14.15 / 2a10:50c0::bad1:ff)"
-- **DoH (DNS over HTTPS)?** — options:
-  - "Enable DoH for the DNS servers I picked above"
-- **NetBIOS / LLMNR / mDNS** — options:
-  - "Disable NetBIOS over TCP/IP on all non-domain adapters"
-  - "Disable LLMNR (rarely useful post-Win10)"
+`AskUserQuestion`, ≤3 questions:
 
-If user is on a domain (`.domain.joined=true`), skip the NetBIOS question — enterprise auth often still uses NBT.
+**Q1 — "Which company do you want to translate website names to addresses?" (pick one — this is your DNS provider; it sees which sites you visit)** — `multiSelect: false`
+- Leave it alone (your internet provider or WiFi router decides — the default)
+- Cloudflare — fast, doesn't log
+- Quad9 — blocks known-malware sites automatically
+- Google — fast, but Google sees the lookups
+- AdGuard Family — blocks ads and adult sites at the network level
+
+**Q2 — "Encrypt the lookups so your internet provider can't see which sites you visit?" (check to enable)** — `multiSelect: true`
+- Yes, encrypt these lookups (uses the provider I picked above)
+
+**Q3 — "Turn off some old network-discovery features you almost certainly don't need?" (check all that apply — these are minor security wins)** — `multiSelect: true`
+- Turn off an old Windows way of finding computers by name on the local network (only breaks things on very old office/print setups)
+- Turn off another legacy "find device by name on WiFi" feature (rarely used since Windows 10)
+
+If user is on a domain (`.domain.joined=true`), skip Q3 — enterprise auth often still uses NBT.
 
 ### 4. Build plan JSON
 

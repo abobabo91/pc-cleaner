@@ -27,12 +27,14 @@ Run `ps/diagnose/crashdumps.ps1`. It:
 
 ### 2. Ask the user
 
+**Plain-English rule: describe what we're doing ("figure out which driver is crashing your PC") instead of tool names like "WinDbg" or "kd.exe."** Keep raw tool names, symbol paths, and SDK URLs INTERNAL. Substitute the actual crash-log count found at diagnose time.
+
 Single `AskUserQuestion`:
 
-- **Install Windows SDK Debuggers and analyze the last N minidumps?** — options:
-  - "Yes — install debuggers (~200 MB) and analyze last 10 minidumps"
-  - "Yes — I already have kd installed, just analyze"
-  - "No — skip this module"
+**Q1 — "I found N crash reports from the last 30 days. Want me to figure out which driver is crashing your PC?" (this needs a ~200 MB tool from Microsoft. I'll download it, run it against the crash reports, and give you a ranked list of which driver / hardware chip is to blame.)**
+- Yes — download the analysis tool (~200 MB) and analyze the crash reports
+- Yes — I've already got the tool installed, just do the analysis
+- No — skip this
 
 ### 3. Build plan JSON
 

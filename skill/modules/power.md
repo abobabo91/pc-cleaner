@@ -41,16 +41,23 @@ Run `ps/diagnose/power.ps1`. Emits:
 
 ### 3. Ask the user
 
+**Plain-English rule: describe what the user experiences, not `powercfg` verbs or file names like `hiberfil.sys`.** Keep raw flag names (`HiberbootEnabled`, `LIDACTION`, LPS flag list) INTERNAL. Substitute actual GB numbers for hibernate-file sizes at ask time.
+
 `AskUserQuestion`, `multiSelect: true`, ≤3 questions:
 
-- **Hibernate settings** — options:
-  - "Turn Fast Startup off (needed for dual-boot; helps some sleep bugs)"
-  - "Disable hibernation entirely (removes hiberfil.sys — frees ~RAM-size in GB — you lose hibernate as a state)"
-  - "Set hibernate type to Reduced (halves hiberfil.sys — keeps hibernation)"
-- **Sleep timers (AC / DC)** — free text or preset picks. Skip if user is happy with current.
-- **Lid close behavior** (laptops only) — options:
-  - "Lid close on battery: Hibernate"
-  - "Lid close on AC: Do nothing"
+**Q1 — "Sleep and shutdown behavior — check what you want" (check all that apply)**
+- Make the PC do a real, full shutdown when you click Shutdown (currently Windows does a hybrid shutdown that saves state; a real shutdown is a bit slower to boot but fixes many weird post-sleep bugs, and it's required if you dual-boot with Linux)
+- Free up about X GB of disk space by removing hibernate entirely (you'll lose the ability to hibernate — sleep still works normally)
+- Cut the hibernate file size roughly in half (~X GB freed, hibernate keeps working but resumes a bit slower)
+
+**Q2 — "How long before the screen turns off and the PC sleeps?" (leave alone if the current settings feel fine)**
+- Ask for preferred minutes for screen-off on battery / on charger
+- Ask for preferred minutes for sleep on battery / on charger
+- Or pick a preset
+
+**Q3 — "When you close the lid, what should the laptop do?" (laptops only — check what you want)**
+- On battery: go to Hibernate (safe long-term, doesn't drain the battery flat overnight)
+- On charger: do nothing (the laptop keeps running — useful if you use it with an external monitor while the lid is closed)
 
 ### 4. Build plan JSON
 

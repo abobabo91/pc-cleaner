@@ -45,18 +45,21 @@ Emit total per source + top 20 largest single files.
 
 ### 3. Ask the user
 
+**Plain-English rule: show the user what gets freed and what the trade-off is, not the internal source name.** Substitute actual GB numbers into the copy at ask time.
+
 Grouped `AskUserQuestion`, `multiSelect: true`, ≤2 questions:
 
-- **Which optional cleanups do you want?** — options:
-  - "Windows.old (previous Windows install — X GB) — cannot be undone; blocks rollback to previous Win version"
-  - "Recycle Bin (X GB)"
-  - "Browser caches (Chrome/Edge/Brave — X GB — will re-download some sites on next visit)"
-  - "Prefetch (Windows will rebuild next few boots — usually not worth it)"
-- **Storage Sense config** — options:
-  - "Enable Storage Sense (auto-cleanup on low disk)"
-  - "Delete Recycle Bin items older than 30 days"
-  - "Delete Downloads unused for 60 days" (warn: risky if user parks installers there)
-  - "Cloud sync — remove local copies of files not opened in 30 days (OneDrive Files On-Demand)"
+**Q1 — "Which of these do you want cleaned up?" (check all that apply — sizes are what we'd free)**
+- Leftover files from your previous Windows install (~X GB) — after this you can't roll back to the old Windows version, but you also won't be able to anyway after 10 days
+- Recycle Bin (~X GB) — empties everything you've thrown away
+- Web browser caches for Chrome / Edge / Brave (~X GB) — some sites will feel a bit slower the first time you visit them again while they re-cache
+- Windows' app-launch history file (~X GB) — makes Windows very slightly slower to launch programs for a few boots; usually not worth doing
+
+**Q2 — "Do you want Windows to auto-clean itself when your disk gets full?" (check all that apply)**
+- Yes, turn on Windows' auto-cleanup (it kicks in when your disk starts getting full)
+- Auto-empty the Recycle Bin for anything older than 30 days
+- Auto-delete files in Downloads that you haven't touched in 60 days (leave off if you park installers there)
+- For files stored in OneDrive: keep them in the cloud only if you haven't opened them in 30 days (they still show in File Explorer; downloaded on demand when you double-click)
 
 ### 4. Build plan JSON
 

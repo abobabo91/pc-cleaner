@@ -28,12 +28,43 @@ Then for each entry: look up `data/bloat_uwp.json` and label:
 
 ### 2. Ask the user
 
+**Plain-English rule: describe apps by what the user sees on their Start menu, not their AppX package family name.** Keep the raw `Microsoft.XboxGamingOverlay` etc. in the INTERNAL plan JSON.
+
 Grouped `AskUserQuestion`, `multiSelect: true`, ≤4 questions:
 
-- **Do you use any of these Microsoft apps?** — Photos (new Media), Groove Music, Movies & TV, Mail & Calendar (old), Sticky Notes, Snipping Tool, Voice Recorder, Notepad UWP.
-- **Which pre-installed games/entertainment do you want to keep?** — Solitaire Collection, Minecraft Launcher, Xbox Game Bar, Xbox Console Companion, Xbox Live, Spotify preinstall.
-- **Which OEM apps do you want to keep?** — Lenovo Vantage, Lenovo Now, HP Support Assistant, HP QuickDrop, Dell Update, Dell Digital Delivery, ASUS ROG apps, McAfee/Norton preinstall.
-- **Which social / news apps?** — LinkedIn, News, Weather, People, Skype, Clipchamp, Family, Copilot, Feedback Hub.
+**Q1 — "Which of these built-in Windows apps do you actually use?" (check all that apply — anything unchecked will be uninstalled)**
+- Photos (opens your JPGs / PNGs)
+- Groove Music
+- Movies & TV
+- Mail and Calendar (the built-in ones — skip if you use Outlook or a browser)
+- Sticky Notes
+- Snipping Tool (screenshots)
+- Voice Recorder
+- Notepad
+
+**Q2 — "Which pre-installed games or gaming extras do you want to keep?" (check all that apply)**
+- Microsoft Solitaire Collection
+- Minecraft Launcher
+- Game Bar (the overlay that pops up with Win+G during games)
+- The Xbox app (for buying / launching Xbox games on PC)
+- Xbox sign-in service (needed if you play any game that signs into an Xbox / Microsoft account — Minecraft, Forza, etc.)
+- Spotify (the pre-installed one)
+
+**Q3 — "Your laptop came with some apps from its maker. Which do you want to keep?" (check all that apply — anything unchecked will be uninstalled)**
+- Your laptop maker's main app (Lenovo Vantage / HP Support Assistant / Dell Update / ASUS ROG) — handles warranty, driver updates, thermal settings
+- The extra file-sharing / delivery tools (HP QuickDrop, Dell Digital Delivery, Lenovo Now)
+- The pre-installed antivirus trial (McAfee, Norton) — usually a trial that expires
+
+**Q4 — "Which of these social / news / assistant apps do you actually use?" (check all that apply — anything unchecked will be uninstalled)**
+- LinkedIn app
+- News app
+- Weather app
+- People app
+- Skype
+- Clipchamp (video editor)
+- Microsoft Family (parental controls)
+- Copilot (the AI chat assistant on the taskbar)
+- Feedback Hub
 
 Unchecked → uninstall. Checked → keep.
 

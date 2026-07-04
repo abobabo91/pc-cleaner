@@ -33,11 +33,17 @@ Rank by `installSizeMB × log10(days_since_launch + 1)`.
 
 ### 3. Ask the user
 
-`AskUserQuestion`, `multiSelect: true`. Split into ≤4 questions of ~5 apps each. Show for each:
-- Name
-- Size (MB or GB)
-- Last launched (date or "never")
-- Publisher
+**Plain-English rule: show the app the way the user would recognize it — the name they saw in Add or Remove Programs, plus size and when they last opened it. No `UserAssist`, `Prefetch`, `.pf`, or `HKCU\...\Uninstall` references in the visible copy.** Keep those in the INTERNAL plan JSON.
+
+`AskUserQuestion`, `multiSelect: true`. Split into ≤4 questions of ~5 apps each.
+
+**Q1 — "Here are some apps you don't seem to have opened in a while. Uninstall any of them?" (check the ones to uninstall — leave unchecked to keep)**
+
+Each option shown as:
+- App name (as it appears in Windows' apps list)
+- Size (e.g. "2.1 GB")
+- Last opened (e.g. "8 months ago" or "never")
+- Who made it (e.g. "Adobe", "Epic Games")
 
 Do NOT include Windows-shipped UWP bloat here — that's `bloat` module's job. Only reach for third-party apps installed by the user or OEM.
 
