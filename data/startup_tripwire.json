@@ -1,0 +1,203 @@
+{
+  "_comment": "Startup entries that MUST NOT be disabled — the app either breaks entirely or the user loses data sync. Even if the user checks 'disable everything' the startup module refuses these and warns. Match is case-insensitive substring against value name OR command. Categories: cloud_sync (data will stop syncing), security (AV/EDR tray required), essential_helper (audio/GPU/dock helpers with hard dependency), password_manager, dev_toolchain.",
+  "categories": {
+    "cloud_sync": {
+      "reason_group": "User has files actively syncing — disabling stops backup / desync.",
+      "entries": [
+        {
+          "id": "OneDrive",
+          "matchNames": ["OneDrive"],
+          "matchCommandSubstrings": ["OneDrive.exe /background"],
+          "reason": "OneDrive sync client — disabling stops file sync silently."
+        },
+        {
+          "id": "Dropbox",
+          "matchNames": ["Dropbox", "DropboxUpdate"],
+          "matchCommandSubstrings": ["Dropbox\\Client\\Dropbox.exe"],
+          "reason": "Dropbox sync client — same reason."
+        },
+        {
+          "id": "GoogleDriveFS",
+          "matchNames": ["GoogleDriveFS", "Google Drive"],
+          "matchCommandSubstrings": ["Google\\Drive File Stream", "GoogleDriveFS.exe"],
+          "reason": "Google Drive for desktop — filesystem-level mount, breaks entirely without startup."
+        },
+        {
+          "id": "iCloud",
+          "matchNames": ["iCloud Services", "iCloudDrive"],
+          "matchCommandSubstrings": ["iCloud\\iCloudServices.exe", "iCloud\\iCloudDrive.exe"],
+          "reason": "iCloud Drive for Windows — mount + sync."
+        },
+        {
+          "id": "MEGAsync",
+          "matchNames": ["MEGAsync"],
+          "matchCommandSubstrings": ["MEGAsync\\MEGAsync.exe"],
+          "reason": "MEGA cloud sync."
+        },
+        {
+          "id": "pCloudDrive",
+          "matchNames": ["pCloudDrive"],
+          "matchCommandSubstrings": ["pCloud Drive\\pCloud.exe"],
+          "reason": "pCloud sync + virtual drive."
+        }
+      ]
+    },
+    "security": {
+      "reason_group": "Security software — disabling leaves the system exposed.",
+      "entries": [
+        {
+          "id": "SecurityHealth",
+          "matchNames": ["SecurityHealth"],
+          "matchCommandSubstrings": ["Windows Security\\SecurityHealthSystray.exe"],
+          "reason": "Windows Defender / Security Center tray. Signals to Windows that AV UI is present."
+        },
+        {
+          "id": "BitdefenderAgent",
+          "matchNames": ["Bitdefender Agent"],
+          "matchCommandSubstrings": ["Bitdefender Agent"],
+          "reason": "Bitdefender endpoint tray."
+        },
+        {
+          "id": "ESETSecurity",
+          "matchNames": ["egui", "ESET Security"],
+          "matchCommandSubstrings": ["ESET\\ESET Security\\egui.exe"],
+          "reason": "ESET Security tray."
+        },
+        {
+          "id": "KasperskyLab",
+          "matchNames": ["AVP"],
+          "matchCommandSubstrings": ["Kaspersky Lab\\"],
+          "reason": "Kaspersky tray."
+        }
+      ]
+    },
+    "password_managers": {
+      "reason_group": "Password manager tray — user relies on autofill / clipboard integration.",
+      "entries": [
+        {
+          "id": "Bitwarden",
+          "matchNames": ["Bitwarden"],
+          "matchCommandSubstrings": ["Bitwarden\\Bitwarden.exe"],
+          "reason": "Bitwarden desktop client — user's password vault."
+        },
+        {
+          "id": "1Password",
+          "matchNames": ["1Password"],
+          "matchCommandSubstrings": ["1Password\\app\\", "1PasswordSetup.exe"],
+          "reason": "1Password 8 desktop app."
+        },
+        {
+          "id": "KeePass",
+          "matchNames": ["KeePass"],
+          "matchCommandSubstrings": ["KeePass\\KeePass.exe"],
+          "reason": "KeePass tray."
+        },
+        {
+          "id": "LastPass",
+          "matchNames": ["LastPass"],
+          "matchCommandSubstrings": ["LastPass\\LastPass.exe"],
+          "reason": "LastPass desktop tray."
+        }
+      ]
+    },
+    "essential_helpers": {
+      "reason_group": "Audio / GPU / dock / laptop helpers — hardware breaks or degrades without them.",
+      "entries": [
+        {
+          "id": "RtkAudUService",
+          "matchNames": ["RtkAudUService", "RAVCpl64", "RTHDCPL"],
+          "matchCommandSubstrings": ["RtkAudUService64.exe", "RAVCpl64.exe"],
+          "reason": "Realtek audio user-service. Audio device breaks or loses effects without it."
+        },
+        {
+          "id": "NahimicService",
+          "matchNames": ["Nahimic Service"],
+          "matchCommandSubstrings": ["Nahimic\\NahimicSvc"],
+          "reason": "Nahimic audio DSP — OEM audio profile depends on it."
+        },
+        {
+          "id": "DellAudio",
+          "matchNames": ["Waves MaxxAudio", "MaxxAudioPro"],
+          "matchCommandSubstrings": ["Waves\\MaxxAudioPro"],
+          "reason": "Dell / other OEM Waves audio profile."
+        },
+        {
+          "id": "AMDRadeonSoftware",
+          "matchNames": ["AMD Radeon Software", "RadeonSoftware"],
+          "matchCommandSubstrings": ["AMD\\CNext\\CNext\\RadeonSoftware.exe"],
+          "reason": "Radeon Software tray — GPU profile switching and undervolt state."
+        },
+        {
+          "id": "NVIDIAContainer",
+          "matchNames": ["NVIDIA Container", "NVBackend"],
+          "matchCommandSubstrings": ["NVIDIA Corporation\\NVIDIA app", "NVIDIA GeForce Experience"],
+          "reason": "NVIDIA app / GeForce Experience — optimal-settings + display driver companion."
+        },
+        {
+          "id": "IntelGraphics",
+          "matchNames": ["igfxTray", "HotKeysCmds", "Intel Graphics Command Center"],
+          "matchCommandSubstrings": ["Intel\\Graphics"],
+          "reason": "Intel Graphics tray — display profile + hotkey handling."
+        },
+        {
+          "id": "SynapticsTouchPad",
+          "matchNames": ["SynTPEnh", "SynTPHelper"],
+          "matchCommandSubstrings": ["Synaptics\\SynTP"],
+          "reason": "Synaptics touchpad helper — gestures / palm rejection break without it."
+        },
+        {
+          "id": "ELANTouchPad",
+          "matchNames": ["ETDCtrlHelper", "ETDCtrl"],
+          "matchCommandSubstrings": ["Elantech\\ETD"],
+          "reason": "ELAN touchpad helper."
+        },
+        {
+          "id": "IntelRST",
+          "matchNames": ["IAStorIconLaunch"],
+          "matchCommandSubstrings": ["Intel\\Intel(R) Rapid Storage Technology"],
+          "reason": "Intel Rapid Storage — RAID / Optane management."
+        }
+      ]
+    },
+    "dev_toolchain": {
+      "reason_group": "Dev toolchain daemons the user runs.",
+      "entries": [
+        {
+          "id": "DockerDesktop",
+          "matchNames": ["Docker Desktop", "com.docker.service"],
+          "matchCommandSubstrings": ["Docker\\Docker Desktop.exe"],
+          "reason": "Docker Desktop startup — WSL2 backend + engine init."
+        }
+      ]
+    },
+    "vpn_networking": {
+      "reason_group": "VPN clients — kill switch and always-on may depend on autostart.",
+      "entries": [
+        {
+          "id": "OpenVPNGUI",
+          "matchNames": ["OpenVPN-GUI"],
+          "matchCommandSubstrings": ["OpenVPN\\bin\\openvpn-gui.exe"],
+          "reason": "OpenVPN GUI — user may auto-connect on login."
+        },
+        {
+          "id": "NordVPN",
+          "matchNames": ["NordVPN"],
+          "matchCommandSubstrings": ["NordVPN\\NordVPN.exe"],
+          "reason": "NordVPN client with auto-connect."
+        },
+        {
+          "id": "ProtonVPN",
+          "matchNames": ["ProtonVPN"],
+          "matchCommandSubstrings": ["Proton\\VPN\\ProtonVPN.exe"],
+          "reason": "Proton VPN client."
+        },
+        {
+          "id": "MullvadVPN",
+          "matchNames": ["MullvadVPN"],
+          "matchCommandSubstrings": ["Mullvad VPN\\Mullvad VPN.exe"],
+          "reason": "Mullvad daemon UI."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "_comment": "Power-plan tweaks applied via powercfg /setacvalueindex + /setdcvalueindex on the ACTIVE plan (SCHEME_CURRENT). Every recipe: id, powercfgSubgroup (SUB_* GUID alias), powercfgSetting (setting GUID alias), ACValue and DCValue (raw powercfg value — seconds for timers, % for CPU throttle, 0/1/2 for enum), appliesTo (all / laptop / desktop / ryzen6plus_laptop / intel_11plus_laptop / modern_standby_laptop), rationale. Diagnose snapshots the active plan via powercfg /export before applying. Values documented for reference: PROCTHROTTLEMIN 5-100 (%), STANDBYIDLE 0=never else seconds, HIBERNATEIDLE 0=never else seconds, LIDACTION 0=nothing 1=sleep 2=hibernate 3=shutdown, ASPM 0=off 1=moderate 2=maximum.",
+  "modernStandbyNote": "On Modern Standby (S0-Low-Power-Idle) laptops (Intel 11th-gen+, Ryzen 6000+, most Ultra 100+ machines) S3 sleep is not exposed — sleep = 'connected standby' that keeps some hardware ticking. Setting DC sleep = never on these machines is deliberate: it forces hibernate instead, which is the only true zero-power state available. Confirm 'powercfg /a' does not list S3 before applying.",
+  "recipes": [
+    {
+      "id": "pcie_aspm_off",
+      "powercfgSubgroup": "SUB_PCIEXPRESS",
+      "powercfgSetting": "ASPM",
+      "ACValue": 0,
+      "DCValue": 0,
+      "appliesTo": "all",
+      "rationale": "PCIe Active State Power Management off. Fixes combo-card WLAN/BT wakes, NVMe stalls, and Realtek WLAN crashes on Ryzen 6000+. Sacrifices ~0.5W idle for reliability."
+    },
+    {
+      "id": "lid_do_nothing",
+      "powercfgSubgroup": "SUB_BUTTONS",
+      "powercfgSetting": "LIDACTION",
+      "ACValue": 0,
+      "DCValue": 0,
+      "appliesTo": "laptop",
+      "rationale": "Lid close: do nothing. Prevents Modern Standby wake-in-bag heat + battery drain. Combine with hibernate-on-timer for a true 'close lid = safe' UX."
+    },
+    {
+      "id": "sleep_never_dc",
+      "powercfgSubgroup": "SUB_SLEEP",
+      "powercfgSetting": "STANDBYIDLE",
+      "ACValue": 0,
+      "DCValue": 0,
+      "appliesTo": "modern_standby_laptop",
+      "rationale": "Sleep timer: never (both AC + DC). On Modern Standby machines Windows will otherwise stay in S0LPI and drain the battery in a bag. Rely on hibernate timer instead."
+    },
+    {
+      "id": "hibernate_dc_30min",
+      "powercfgSubgroup": "SUB_SLEEP",
+      "powercfgSetting": "HIBERNATEIDLE",
+      "ACValue": 0,
+      "DCValue": 1800,
+      "appliesTo": "modern_standby_laptop",
+      "rationale": "Hibernate after 30 minutes on battery, never on AC. 1800 seconds = 0x00000708. Combined with sleep=never, this is the actual 'safe in bag' state on Modern Standby machines."
+    },
+    {
+      "id": "hibernate_dc_30min_traditional",
+      "powercfgSubgroup": "SUB_SLEEP",
+      "powercfgSetting": "HIBERNATEIDLE",
+      "ACValue": 0,
+      "DCValue": 1800,
+      "appliesTo": "laptop",
+      "rationale": "For S3-capable laptops, same 30-min hibernate as a longer fallback after sleep. AC never."
+    },
+    {
+      "id": "cpu_min_5pct",
+      "powercfgSubgroup": "SUB_PROCESSOR",
+      "powercfgSetting": "PROCTHROTTLEMIN",
+      "ACValue": 5,
+      "DCValue": 5,
+      "appliesTo": "all",
+      "rationale": "Minimum processor state 5%. Safe minimum — lets the CPU park cores for idle without the 0% edge cases some drivers hate."
+    },
+    {
+      "id": "cpu_max_100pct",
+      "powercfgSubgroup": "SUB_PROCESSOR",
+      "powercfgSetting": "PROCTHROTTLEMAX",
+      "ACValue": 100,
+      "DCValue": 100,
+      "appliesTo": "all",
+      "rationale": "Maximum processor state 100%. Turbo / boost allowed on both AC and DC — the OEM firmware limits real power under battery anyway."
+    },
+    {
+      "id": "usb_selective_suspend_off",
+      "powercfgSubgroup": "2a737441-1930-4402-8d77-b2bebba308a3",
+      "powercfgSetting": "48e6b7a6-50f5-4782-a5d4-53bb8f07e226",
+      "ACValue": 0,
+      "DCValue": 0,
+      "appliesTo": "all",
+      "rationale": "USB selective suspend off. Prevents dropped audio interfaces, disconnected BT dongles, and the classic 'mouse dies until I unplug it' failure. Optional — costs ~0.2W idle."
+    },
+    {
+      "id": "disk_sleep_ac_never",
+      "powercfgSubgroup": "SUB_DISK",
+      "powercfgSetting": "DISKIDLE",
+      "ACValue": 0,
+      "DCValue": 600,
+      "appliesTo": "all",
+      "rationale": "Disk spin-down: never on AC, 10 min on DC. Modern NVMe ignores this but SATA HDDs / SSDs on old laptops still respect it."
+    }
+  ],
+  "postApply": {
+    "command": "powercfg /setactive SCHEME_CURRENT",
+    "note": "Re-apply the active scheme so the setacvalueindex/setdcvalueindex changes take effect."
+  }
+}

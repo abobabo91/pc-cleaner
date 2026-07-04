@@ -1,0 +1,123 @@
+{
+  "_comment": "Registry tweaks for Windows 11 Explorer/Taskbar UI de-annoyance. Same schema as privacy_keys.json. Categories: classic_menu (Win11 right-click revert), taskbar, search, file_visibility, theme, copilot_ui. explorer_conflicts.json must be checked first — if StartAllBack/ExplorerPatcher/Start11/OpenShell is installed, skip classic_menu.",
+  "keys": [
+    {
+      "category": "classic_menu",
+      "path": "HKCU:\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+      "name": "(Default)",
+      "type": "String",
+      "value": "",
+      "note": "Empty-string InprocServer32 override forces Win11 to fall back to the classic Win10 right-click context menu. Requires Explorer restart. Threatened by Microsoft — verify at runtime."
+    },
+    {
+      "category": "widgets",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "TaskbarDa",
+      "type": "DWord",
+      "value": 0,
+      "note": "Widgets/Weather button off (per-user)"
+    },
+    {
+      "category": "widgets",
+      "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh",
+      "name": "AllowNewsAndInterests",
+      "type": "DWord",
+      "value": 0,
+      "note": "Widgets policy — machine-wide kill switch"
+    },
+    {
+      "category": "taskbar",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "TaskbarAl",
+      "type": "DWord",
+      "value": 0,
+      "note": "Taskbar alignment: 0 = left (Win10 style), 1 = center (Win11 default)"
+    },
+    {
+      "category": "search",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+      "name": "SearchboxTaskbarMode",
+      "type": "DWord",
+      "value": 1,
+      "note": "0 = hidden, 1 = icon only, 2 = search box, 3 = search box with icon"
+    },
+    {
+      "category": "file_visibility",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "HideFileExt",
+      "type": "DWord",
+      "value": 0,
+      "note": "Show known file extensions (0 = show)"
+    },
+    {
+      "category": "file_visibility",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "Hidden",
+      "type": "DWord",
+      "value": 1,
+      "note": "1 = show hidden files, 2 = do not show. Ask user first — many users prefer default hidden."
+    },
+    {
+      "category": "file_visibility",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\CabinetState",
+      "name": "FullPath",
+      "type": "DWord",
+      "value": 1,
+      "note": "Show full path in Explorer title bar / address bar"
+    },
+    {
+      "category": "file_visibility",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "ShowSuperHidden",
+      "type": "DWord",
+      "value": 1,
+      "note": "Show protected OS files. Ask user — advanced/dangerous."
+    },
+    {
+      "category": "theme",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+      "name": "AppsUseLightTheme",
+      "type": "DWord",
+      "value": 0,
+      "note": "0 = dark, 1 = light. Ask user — subjective preference."
+    },
+    {
+      "category": "theme",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+      "name": "SystemUsesLightTheme",
+      "type": "DWord",
+      "value": 0,
+      "note": "0 = dark, 1 = light. Ask user."
+    },
+    {
+      "category": "copilot_ui",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "ShowCopilotButton",
+      "type": "DWord",
+      "value": 0,
+      "note": "Copilot button on taskbar off (Win11 24H2+)"
+    },
+    {
+      "category": "copilot_ui",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "TaskbarMn",
+      "type": "DWord",
+      "value": 0,
+      "note": "Chat / Microsoft Teams icon off"
+    },
+    {
+      "category": "taskbar",
+      "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+      "name": "ShowTaskViewButton",
+      "type": "DWord",
+      "value": 0,
+      "note": "Task View button off. Ask user — some rely on virtual desktops via this button."
+    }
+  ],
+  "notes": {
+    "apply_silently": ["widgets", "taskbar", "search", "copilot_ui"],
+    "ask_user": ["classic_menu", "file_visibility", "theme"],
+    "restart_required": ["classic_menu", "taskbar", "search", "widgets", "copilot_ui"],
+    "restart_command": "Stop-Process -Name explorer -Force"
+  }
+}

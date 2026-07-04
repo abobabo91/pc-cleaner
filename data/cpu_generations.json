@@ -1,0 +1,145 @@
+{
+  "_comment": "CPU family regex catalog for the profile module. Match ProcessorNameString (from Win32_Processor.Name) against each 'regex' in order until one hits. 'generation' is used by downstream modules (e.g. power: Modern Standby detection on Intel 11th-gen+ and Ryzen 6000+). AMD Ryzen model numbering: first digit of the 4-digit number = generation. Intel Core: first 1-2 digits after i3/i5/i7/i9- = generation. Notes flag Modern-Standby-only families (S3 sleep dropped by the OEM).",
+  "families": [
+    {
+      "family": "AMD Ryzen 1000 series (Zen 1)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*1\\d{3}",
+      "generation": 1,
+      "vendor": "AMD",
+      "notes": "S3 sleep supported"
+    },
+    {
+      "family": "AMD Ryzen 2000 series (Zen+ / Zen 1 Raven Ridge)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*2\\d{3}",
+      "generation": 2,
+      "vendor": "AMD",
+      "notes": "S3 sleep supported"
+    },
+    {
+      "family": "AMD Ryzen 3000 series (Zen 2)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*3\\d{3}",
+      "generation": 3,
+      "vendor": "AMD",
+      "notes": "S3 sleep supported on desktop; some mobile OEMs Modern Standby"
+    },
+    {
+      "family": "AMD Ryzen 4000 series (Zen 2 Renoir)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*4\\d{3}",
+      "generation": 4,
+      "vendor": "AMD",
+      "notes": "S3 sleep supported on most laptops"
+    },
+    {
+      "family": "AMD Ryzen 5000 series (Zen 3)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*5\\d{3}",
+      "generation": 5,
+      "vendor": "AMD",
+      "notes": "Mixed: desktop S3, mobile mostly Modern Standby"
+    },
+    {
+      "family": "AMD Ryzen 6000 series (Zen 3+ Rembrandt)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*6\\d{3}",
+      "generation": 6,
+      "vendor": "AMD",
+      "notes": "Modern Standby only on laptops. Known combo-card BT/WLAN sleep quirks."
+    },
+    {
+      "family": "AMD Ryzen 7000 series (Zen 4)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*7\\d{3}",
+      "generation": 7,
+      "vendor": "AMD",
+      "notes": "Modern Standby only on laptops."
+    },
+    {
+      "family": "AMD Ryzen 8000 series (Zen 4 Hawk Point / Phoenix refresh)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*8\\d{3}",
+      "generation": 8,
+      "vendor": "AMD",
+      "notes": "Modern Standby only on laptops."
+    },
+    {
+      "family": "AMD Ryzen 9000 series (Zen 5)",
+      "regex": "(?i)AMD Ryzen [3579]\\s*9\\d{3}",
+      "generation": 9,
+      "vendor": "AMD",
+      "notes": "Modern Standby only on laptops."
+    },
+    {
+      "family": "Intel Core 6th gen (Skylake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-6\\d{3}",
+      "generation": 6,
+      "vendor": "Intel",
+      "notes": "S3 sleep supported"
+    },
+    {
+      "family": "Intel Core 7th gen (Kaby Lake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-7\\d{3}",
+      "generation": 7,
+      "vendor": "Intel",
+      "notes": "S3 sleep supported"
+    },
+    {
+      "family": "Intel Core 8th gen (Coffee Lake / Whiskey Lake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-8\\d{3}",
+      "generation": 8,
+      "vendor": "Intel",
+      "notes": "S3 sleep supported on most machines"
+    },
+    {
+      "family": "Intel Core 9th gen (Coffee Lake Refresh)",
+      "regex": "(?i)Intel.*Core.*i[3579]-9\\d{3}",
+      "generation": 9,
+      "vendor": "Intel",
+      "notes": "S3 sleep supported"
+    },
+    {
+      "family": "Intel Core 10th gen (Comet Lake / Ice Lake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-10\\d{3}",
+      "generation": 10,
+      "vendor": "Intel",
+      "notes": "Mixed: desktop S3, some Ice Lake laptops Modern Standby"
+    },
+    {
+      "family": "Intel Core 11th gen (Tiger Lake / Rocket Lake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-11\\d{3}",
+      "generation": 11,
+      "vendor": "Intel",
+      "notes": "Modern Standby only on laptops."
+    },
+    {
+      "family": "Intel Core 12th gen (Alder Lake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-12\\d{3}",
+      "generation": 12,
+      "vendor": "Intel",
+      "notes": "Modern Standby only on laptops. P/E hybrid cores."
+    },
+    {
+      "family": "Intel Core 13th gen (Raptor Lake)",
+      "regex": "(?i)Intel.*Core.*i[3579]-13\\d{3}",
+      "generation": 13,
+      "vendor": "Intel",
+      "notes": "Modern Standby only on laptops. P/E hybrid cores. Known desktop degradation issue at high voltage."
+    },
+    {
+      "family": "Intel Core 14th gen (Raptor Lake Refresh)",
+      "regex": "(?i)Intel.*Core.*i[3579]-14\\d{3}",
+      "generation": 14,
+      "vendor": "Intel",
+      "notes": "Modern Standby only on laptops. P/E hybrid cores. Same voltage/degradation lineage as 13th gen."
+    },
+    {
+      "family": "Intel Core Ultra 100 series (Meteor Lake)",
+      "regex": "(?i)Intel.*Core.*Ultra.*[3579].*1\\d{2}",
+      "generation": 15,
+      "vendor": "Intel",
+      "notes": "Modern Standby only. Tiled architecture with NPU."
+    },
+    {
+      "family": "Intel Core Ultra 200 series (Arrow Lake / Lunar Lake)",
+      "regex": "(?i)Intel.*Core.*Ultra.*[3579].*2\\d{2}",
+      "generation": 16,
+      "vendor": "Intel",
+      "notes": "Modern Standby only."
+    }
+  ]
+}

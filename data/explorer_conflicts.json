@@ -1,0 +1,41 @@
+{
+  "_comment": "Third-party shell/taskbar modifiers that conflict with our Explorer tweaks. If any listed installed-app name or running process is detected, skip the classic-menu override (they already patch the shell) and warn the user before touching taskbar/widgets/search keys — they may fight for the same settings.",
+  "conflicts": [
+    {
+      "toolName": "StartAllBack",
+      "installedAppNames": ["StartAllBack"],
+      "runningProcesses": ["StartAllBackCfg.exe"],
+      "registryProbes": ["HKCU:\\Software\\StartIsBack", "HKCU:\\Software\\StartAllBack"],
+      "action": "skip_classic_menu",
+      "reason": "StartAllBack already restores classic context menu and taskbar; our override fights it."
+    },
+    {
+      "toolName": "ExplorerPatcher",
+      "installedAppNames": ["ExplorerPatcher"],
+      "runningProcesses": ["ep_setup.exe", "ExplorerPatcher.exe"],
+      "registryProbes": ["HKCU:\\Software\\ExplorerPatcher"],
+      "action": "skip_classic_menu",
+      "reason": "ExplorerPatcher owns shell customization; our tweaks will be overridden or crash Explorer."
+    },
+    {
+      "toolName": "Start11",
+      "installedAppNames": ["Start11", "Stardock Start11"],
+      "runningProcesses": ["Start11.exe", "Start11x64.exe"],
+      "registryProbes": ["HKCU:\\Software\\Stardock\\Start11"],
+      "action": "skip_classic_menu",
+      "reason": "Stardock Start11 manages taskbar/start menu itself."
+    },
+    {
+      "toolName": "OpenShell",
+      "installedAppNames": ["Open-Shell", "Open Shell Menu", "Classic Shell"],
+      "runningProcesses": ["StartMenu.exe", "ClassicStartMenu.exe"],
+      "registryProbes": ["HKCU:\\Software\\OpenShell", "HKCU:\\Software\\IvoSoft\\ClassicShell"],
+      "action": "skip_classic_menu",
+      "reason": "Open-Shell replaces Start menu and often the context menu."
+    }
+  ],
+  "defaultActionOnDetection": {
+    "skip_classic_menu": "Do not write the {86ca1aa0-...} InprocServer32 empty-string override.",
+    "warn_taskbar_tweaks": "Ask user before applying TaskbarAl / SearchboxTaskbarMode / TaskbarDa — the third-party tool may snap them back."
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "_comment": "Realtek WLAN driver registry flags that override the OS PCIe ASPM setting. All must be zeroed for combo-card BT range fix (BT antenna shares with WLAN; if the WLAN goes into low-power the BT loses ~2-3m of range and drops audio). Keys live under HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}\\<0000|0001|...> — the network-adapter class GUID. Enumerate all 4-digit subkeys, read 'MatchingDeviceId' (or 'DriverDesc'), and only apply if it matches a Realtek WLAN chip from combo_cards.json (or if 'MatchingDeviceId' contains 'ven_10ec'). Source: session_2026-07-04_lenovo_slim7prox.md fix for RTL8822CE + BT range regression on Ryzen 6900HS.",
+  "class_guid": "{4d36e972-e325-11ce-bfc1-08002be10318}",
+  "class_path_root": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}",
+  "match_vendor_regex": "(?i)ven_10ec",
+  "flags": [
+    {
+      "name": "PciASPM",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "PCIe Active State Power Management state override — the master switch. 0 = disabled.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bLowPowerEnable",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "Master low-power mode flag.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bLPS_PG_En",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "Leisure Power Save + Power Gating enable.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bLPSTuningEnable",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "LPS runtime tuning enable.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bFwCtrlLPS",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "Firmware-controlled LPS.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bProtectLps",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "LPS protection window.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bAdvancedLPs",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "Advanced LPS state machine.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "bLeisurePs",
+      "targetValue": 0,
+      "type": "DWord",
+      "description": "Basic Leisure Power Save.",
+      "appliesToChips": ["all-realtek"]
+    },
+    {
+      "name": "L1Support",
+      "targetValue": 2,
+      "type": "DWord",
+      "description": "PCIe L1 substate support. Default 2 (L1.1 + L1.2). Safe to leave — only zero if L1 substate causes issues.",
+      "appliesToChips": ["all-realtek"],
+      "leaveDefault": true
+    },
+    {
+      "name": "L1OffSupport",
+      "targetValue": 1,
+      "type": "DWord",
+      "description": "L1-off exit support. Default 1. Safe to leave.",
+      "appliesToChips": ["all-realtek"],
+      "leaveDefault": true
+    }
+  ],
+  "notes": {
+    "apply_after_write": "Disable + re-enable the adapter (or reboot) for flags to take effect.",
+    "revert": "Snapshot the class subkey via reg export before writing; revert.ps1 restores it."
+  }
+}

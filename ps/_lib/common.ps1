@@ -45,6 +45,31 @@ function Get-MachineProfile {
     (powercfg /a) -split "`n" | ForEach-Object {
         if ($_ -match 'Standby \((S\d|S0[^)]*)\)') { $sleep[$Matches[1]] = $_.Trim() }
     }
+
+    # WLAN chip + subsystem (for OEM-mismatch detection, combo-card checks, driver hunt)
+    $wlan = $null
+    try {
+        $wlanDev = Get-PnpDevice -Class Net -Status OK -ErrorAction Stop | Where-Object {
+            $_.FriendlyName -match 'Wi.?Fi|Wireless|802\.11|MediaTek|Realtek|Intel.*AX|Killer|Broadcom' -and
+            $_.FriendlyName -notmatch 'Direct|Miniport|Virtual|Loopback|Kernel|Native'
+        } | Select-Object -First 1
+        if ($wlanDev) {
+            $hwIds = (($wlanDev | Get-PnpDeviceProperty -KeyName DEVPKEY_Device_HardwareIds).Data | Out-String)
+            $ven = if ($hwIds -match 'VEN_([0-9A-Fa-f]{4})')     { $Matches[1].ToUpper() } else { $null }
+            $dev = if ($hwIds -match 'DEV_([0-9A-Fa-f]{4})')     { $Matches[1].ToUpper() } else { $null }
+            $sub = if ($hwIds -match 'SUBSYS_([0-9A-Fa-f]{8})')  { $Matches[1].ToUpper() } else { $null }
+            $subVen = if ($sub) { $sub.Substring(4,4) } else { $null }
+            $wlan = [PSCustomObject]@{
+                Name                = $wlanDev.FriendlyName
+                VendorId            = $ven
+                DeviceId            = $dev
+                Subsystem           = $sub
+                SubsystemVendor     = $subVen
+                SubsystemVendorName = switch ($subVen) { '103C' {'HP'}; '17AA' {'Lenovo'}; '1028' {'Dell'}; '1043' {'ASUS'}; '1462' {'MSI'}; '1458' {'Gigabyte'}; '10DE' {'NVIDIA'}; '8086' {'Intel'}; '10EC' {'Realtek'}; '14E4' {'Broadcom'}; '168C' {'Qualcomm'}; '14C3' {'MediaTek'}; default { 'Unknown' } }
+            }
+        }
+    } catch {}
+
     [PSCustomObject]@{
         Timestamp   = (Get-Date).ToString('o')
         Machine     = $cs.Manufacturer + ' ' + $cs.Model
@@ -58,6 +83,7 @@ function Get-MachineProfile {
         OSBuild     = $os.BuildNumber
         GPUs        = @($gpus)
         SleepStates = $sleep
+        WLAN        = $wlan
         UserName    = $env:USERNAME
     }
 }

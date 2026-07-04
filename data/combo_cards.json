@@ -1,0 +1,101 @@
+{
+  "_comment": "WLAN chips that share antennas with an on-package Bluetooth radio. Matters for the power module — the BT-range fix (WLAN LPS flags to 0) only applies to combo cards. Discrete WLAN (rare on modern laptops) doesn't need it. Match by PCI DEV_ID (case-insensitive) against the WLAN adapter's HardwareID. DEV_IDs verified from public driver INFs where noted; MediaTek numbering is approximate — verify at runtime.",
+  "cards": [
+    {
+      "chip": "Realtek RTL8822CE",
+      "vendorId": "10EC",
+      "devIdPattern": "(?i)DEV_C822",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via BTHUSB)",
+      "notes": "Common in 2020-2022 Lenovo / HP laptops. Known BT-range regression when WLAN LPS is on."
+    },
+    {
+      "chip": "Realtek RTL8852BE",
+      "vendorId": "10EC",
+      "devIdPattern": "(?i)DEV_B852",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via BTHUSB)",
+      "notes": "Wi-Fi 6 combo, 2022+."
+    },
+    {
+      "chip": "Realtek RTL8852AE",
+      "vendorId": "10EC",
+      "devIdPattern": "(?i)DEV_8852",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via BTHUSB)",
+      "notes": "Wi-Fi 6 combo, common on Ryzen 5000/6000 laptops."
+    },
+    {
+      "chip": "Realtek RTL8821CE",
+      "vendorId": "10EC",
+      "devIdPattern": "(?i)DEV_C821",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via BTHUSB)",
+      "notes": "Older Wi-Fi 5 combo."
+    },
+    {
+      "chip": "MediaTek MT7921",
+      "vendorId": "14C3",
+      "devIdPattern": "(?i)DEV_7961",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal)",
+      "notes": "DEV_ID uncertain — MediaTek uses various IDs across INF revisions; also seen as DEV_7922. Verify at runtime."
+    },
+    {
+      "chip": "MediaTek MT7922",
+      "vendorId": "14C3",
+      "devIdPattern": "(?i)DEV_0616",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal)",
+      "notes": "Wi-Fi 6E combo, DEV_ID uncertain — verify at runtime."
+    },
+    {
+      "chip": "Intel Wi-Fi 6 AX200",
+      "vendorId": "8086",
+      "devIdPattern": "(?i)DEV_2723",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via Intel Wireless Bluetooth)",
+      "notes": "Discrete M.2 card; also very common OEM-embedded."
+    },
+    {
+      "chip": "Intel Wi-Fi 6 AX201",
+      "vendorId": "8086",
+      "devIdPattern": "(?i)DEV_A0F0|DEV_43F0|DEV_02F0|DEV_4DF0",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via Intel Wireless Bluetooth)",
+      "notes": "CNVio2 form factor — appears with multiple PCH-specific DEV_IDs."
+    },
+    {
+      "chip": "Intel Wi-Fi 6E AX210",
+      "vendorId": "8086",
+      "devIdPattern": "(?i)DEV_2725",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via Intel Wireless Bluetooth)",
+      "notes": "Discrete M.2 card."
+    },
+    {
+      "chip": "Intel Wi-Fi 6E AX211",
+      "vendorId": "8086",
+      "devIdPattern": "(?i)DEV_51F0|DEV_54F0|DEV_7AF0",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal, via Intel Wireless Bluetooth)",
+      "notes": "CNVio2 for Alder Lake+ PCH."
+    },
+    {
+      "chip": "Qualcomm Atheros QCA6174",
+      "vendorId": "168C",
+      "devIdPattern": "(?i)DEV_003E",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal)",
+      "notes": "Older Wi-Fi 5 combo; also rebadged as Killer 1535."
+    },
+    {
+      "chip": "Qualcomm WCN6856 / FastConnect 6900",
+      "vendorId": "17CB",
+      "devIdPattern": "(?i)DEV_1103",
+      "hasBluetooth": true,
+      "btInterface": "USB (internal)",
+      "notes": "DEV_ID uncertain — verify from HardwareID at runtime."
+    }
+  ]
+}

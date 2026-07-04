@@ -54,6 +54,11 @@ Grouped by module. Some are simple JSON extracts of existing knowledge; some nee
 - `unused_apps_never.json` — apps that get low usage but should NOT be flagged (OneDrive, Discord, VPN clients, security agents).
 - `silent_uninstall_flags.json` — winget uninstall flags known to work reliably per publisher.
 
+## New gaps flagged by data-file agent (2026-07-04)
+
+- **`storage_conflicts.json`** — user may already run CCleaner / Wise Disk Cleaner with its own scheduled Prefetch/Temp sweeps. Our auto-purge could fight it. Analogous to `explorer_conflicts.json`.
+- **`modern_standby_overrides.json`** — some Lenovo Ideapad SKUs expose S3 via BIOS setting. Power module currently branches purely on CPU gen; small mfg+model override list would prevent applying DC-sleep-never on machines where the user flipped BIOS to S3.
+
 ## Known unknowns (agent flagged)
 
 - **tray-taskbar pinned-app manipulation on Win11 24H2**: Microsoft moved the pins to a binary blob (`FavoritesResolve` or newer format). Undocumented, changes between builds. Fallback plan documented but may need a native COM helper (`IPinnedListManager`) that PowerShell can't cleanly reach on all builds.

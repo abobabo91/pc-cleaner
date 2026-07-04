@@ -1,0 +1,31 @@
+{
+  "_comment": "PCI subsystem vendor codes (4-hex uppercase). Used by profile.ps1 to map a device's SUBSYS_XXXXYYYY (last 4 hex = vendor) to an OEM name. When the subsystem vendor of e.g. the WLAN card doesn't match the chassis manufacturer, the drivers module flags a cross-OEM mismatch (Lenovo laptop with HP-vendored WLAN → SoftPaq must come from HP).",
+  "vendors": {
+    "103C": "HP",
+    "17AA": "Lenovo",
+    "1028": "Dell",
+    "1043": "ASUS",
+    "1462": "MSI",
+    "1458": "Gigabyte",
+    "1849": "ASRock",
+    "1414": "Microsoft (Surface)",
+    "144D": "Samsung",
+    "104D": "Sony",
+    "1179": "Toshiba",
+    "1854": "LG",
+    "1D72": "Xiaomi",
+    "10DE": "NVIDIA",
+    "1002": "AMD (ATI)",
+    "1022": "AMD",
+    "8086": "Intel",
+    "10EC": "Realtek",
+    "14E4": "Broadcom",
+    "168C": "Qualcomm Atheros",
+    "17CB": "Qualcomm",
+    "14C3": "MediaTek",
+    "1814": "Ralink (MediaTek)",
+    "11AB": "Marvell",
+    "1969": "Atheros (Killer)",
+    "1043_note": "ASUS also vendors many components in-house"
+  }
+}

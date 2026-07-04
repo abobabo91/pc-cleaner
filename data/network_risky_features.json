@@ -1,0 +1,52 @@
+{
+  "_comment": "Legacy / risky Windows network features safe to disable on a modern solo-user machine (not on a homegroup, not sharing files on the LAN via SMBv1, not on a corporate discovery LAN). Each entry: name, description, disableCommand (PowerShell one-liner, run elevated), risk (low = universally safe, medium = may break specific LAN discovery scenarios), revertCommand.",
+  "features": [
+    {
+      "name": "SMB1Protocol",
+      "description": "SMBv1 file sharing protocol. Vulnerable to EternalBlue / WannaCry class of exploits. Removed by default on fresh Win11 installs but often lingers on upgraded machines.",
+      "disableCommand": "Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart",
+      "revertCommand": "Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart",
+      "risk": "low",
+      "notes": "Only breaks access to very old NAS boxes or Windows XP shares."
+    },
+    {
+      "name": "LLMNR",
+      "description": "Link-Local Multicast Name Resolution. Broadcast-based name lookup used when DNS fails; primary vector for LLMNR/NBT-NS poisoning attacks. Disable via policy.",
+      "disableCommand": "New-Item -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Force | Out-Null; Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name 'EnableMulticast' -Value 0 -Type DWord",
+      "revertCommand": "Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient' -Name 'EnableMulticast' -ErrorAction SilentlyContinue",
+      "risk": "low",
+      "notes": "Modern DNS + mDNS cover the same use cases."
+    },
+    {
+      "name": "NetBIOSoverTCP",
+      "description": "NetBIOS over TCP/IP name resolution. Same attack surface as LLMNR. Set per-adapter via WMI.",
+      "disableCommand": "Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True' | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName SetTcpipNetbios -Arguments @{TcpipNetbiosOptions=2} }",
+      "revertCommand": "Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True' | ForEach-Object { Invoke-CimMethod -InputObject $_ -MethodName SetTcpipNetbios -Arguments @{TcpipNetbiosOptions=0} }",
+      "risk": "low",
+      "notes": "Option 2 = disable NetBIOS over TCP/IP. Option 0 = default (use DHCP setting)."
+    },
+    {
+      "name": "mDNS_Bonjour",
+      "description": "Apple Bonjour mDNS service — installed alongside iTunes / Adobe Creative Cloud. Windows 10 20H1+ has native mDNS so Bonjour is redundant. Disable only if the third-party service exists.",
+      "disableCommand": "Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Set-Service -StartupType Disabled; Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Stop-Service -Force",
+      "revertCommand": "Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Set-Service -StartupType Automatic; Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Start-Service",
+      "risk": "medium",
+      "notes": "Breaks AirPrint / AirPlay device discovery from Windows. Do not disable Windows' native mDNS — different service."
+    },
+    {
+      "name": "WPAD",
+      "description": "Web Proxy Auto-Discovery. Used to auto-detect a LAN proxy; also a common attack vector. Disable via the WinHTTP autoproxy service.",
+      "disableCommand": "Set-Service -Name WinHttpAutoProxySvc -StartupType Disabled; Stop-Service -Name WinHttpAutoProxySvc -Force -ErrorAction SilentlyContinue",
+      "revertCommand": "Set-Service -Name WinHttpAutoProxySvc -StartupType Manual",
+      "risk": "medium",
+      "notes": "Do NOT disable if the user is on a corporate network that publishes proxy.pac via WPAD."
+    },
+    {
+      "name": "RemoteRegistry",
+      "description": "Remote Registry service — allows editing this PC's registry from another machine. Disabled by default on Win11 but included for older upgrades.",
+      "disableCommand": "Set-Service -Name RemoteRegistry -StartupType Disabled; Stop-Service -Name RemoteRegistry -Force -ErrorAction SilentlyContinue",
+      "revertCommand": "Set-Service -Name RemoteRegistry -StartupType Manual",
+      "risk": "low"
+    }
+  ]
+}

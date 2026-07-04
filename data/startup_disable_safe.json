@@ -1,0 +1,166 @@
+{
+  "_comment": "Startup entries safe to disable on nearly any Windows 11 machine. Match on entry name (Run key value name) OR command (exe path). Match is case-insensitive substring. Each entry: id, matchNames (registry Run value names / Startup shortcut names), matchCommandSubstrings (exe/path substrings for tighter matching), reason, category. The apply step disables via 'Set-ItemProperty' delete of the Run entry (with snapshot for revert) or renames Startup-folder .lnk to .lnk.disabled.",
+  "categories": {
+    "adobe": {
+      "reason_group": "Adobe updater trays — Creative Cloud handles its own updates, these are legacy trays.",
+      "entries": [
+        {
+          "id": "AdobeAAMUpdater",
+          "matchNames": ["AdobeAAMUpdater-1.0", "Adobe Updater Startup Utility"],
+          "matchCommandSubstrings": ["Adobe\\OOBE\\PDApp\\UWA\\UpdaterStartupUtility.exe"],
+          "reason": "Old Adobe update tray. Creative Cloud Desktop already handles updates."
+        },
+        {
+          "id": "AdobeARM",
+          "matchNames": ["Adobe ARM", "Acrobat Assistant"],
+          "matchCommandSubstrings": ["Adobe\\ARM\\", "Reader\\Reader_sl.exe"],
+          "reason": "Acrobat Reader background updater tray."
+        },
+        {
+          "id": "AdobeCEF",
+          "matchNames": ["AdobeGCInvoker", "AdobeGCClient"],
+          "matchCommandSubstrings": ["Adobe\\AdobeGCClient"],
+          "reason": "Adobe Genuine Software Integrity — background license check."
+        }
+      ]
+    },
+    "apple_legacy": {
+      "reason_group": "Apple helpers used only if you actively sync an iPhone / play iTunes.",
+      "entries": [
+        {
+          "id": "iTunesHelper",
+          "matchNames": ["iTunesHelper"],
+          "matchCommandSubstrings": ["iTunes\\iTunesHelper.exe"],
+          "reason": "iTunes device-connect detector. Not needed if you don't sync an iPhone via USB."
+        },
+        {
+          "id": "QuickTimeTask",
+          "matchNames": ["QuickTime Task"],
+          "matchCommandSubstrings": ["QuickTime\\QTTask.exe"],
+          "reason": "QuickTime is discontinued on Windows since 2016."
+        }
+      ]
+    },
+    "windows_legacy": {
+      "reason_group": "Legacy Windows components no longer used.",
+      "entries": [
+        {
+          "id": "Sidebar",
+          "matchNames": ["Sidebar", "Windows Sidebar"],
+          "matchCommandSubstrings": ["Windows Sidebar\\sidebar.exe"],
+          "reason": "Windows Sidebar (Vista/7). Discontinued in 8+."
+        }
+      ]
+    },
+    "updater_bloat": {
+      "reason_group": "Standalone updaters — separate services already run in the background.",
+      "entries": [
+        {
+          "id": "GoogleUpdate",
+          "matchNames": ["GoogleUpdate", "GoogleChromeAutoLaunch"],
+          "matchCommandSubstrings": ["Google\\Update\\GoogleUpdate.exe"],
+          "reason": "Google Update service + scheduled task handle Chrome updates; the Run entry is redundant."
+        },
+        {
+          "id": "MicrosoftEdgeAutoLaunch",
+          "matchNames": ["MicrosoftEdgeAutoLaunch"],
+          "matchCommandSubstrings": ["Edge\\Application\\msedge.exe --auto-launch-at-startup"],
+          "reason": "Edge preloads on login to make cold-open feel fast. Kills ~200MB RAM."
+        },
+        {
+          "id": "SteamHelper",
+          "matchNames": ["Steam Client Bootstrapper", "SteamService"],
+          "matchCommandSubstrings": ["Steam\\bin\\SteamService.exe", "Steam\\steam.exe -silent"],
+          "reason": "Steam auto-start. Disable if you launch Steam manually — the main client entry is the one that opens the store."
+        },
+        {
+          "id": "EpicGamesLauncher",
+          "matchNames": ["EpicGamesLauncher"],
+          "matchCommandSubstrings": ["Epic Games\\Launcher\\Portal\\Binaries\\Win32\\EpicGamesLauncher.exe"],
+          "reason": "Epic launcher auto-start."
+        }
+      ]
+    },
+    "nag_startups": {
+      "reason_group": "Nag / reminder startups from products you probably already use manually.",
+      "entries": [
+        {
+          "id": "SkypeDesktop",
+          "matchNames": ["Skype for Desktop", "Skype"],
+          "matchCommandSubstrings": ["Skype\\Skype.exe"],
+          "reason": "Skype auto-launch. Disable if you don't use Skype daily."
+        },
+        {
+          "id": "OneDriveSetup",
+          "matchNames": ["OneDriveSetup"],
+          "matchCommandSubstrings": ["OneDriveSetup.exe"],
+          "reason": "OneDrive setup nag — NOT the OneDrive sync client. The active sync client is the 'OneDrive' entry, which is on the tripwire list."
+        },
+        {
+          "id": "SpotifyWebHelper",
+          "matchNames": ["SpotifyWebHelper", "Spotify"],
+          "matchCommandSubstrings": ["Spotify\\SpotifyWebHelper.exe", "Spotify\\Spotify.exe"],
+          "reason": "Spotify auto-launch on login."
+        }
+      ]
+    },
+    "oem_bloat": {
+      "reason_group": "OEM helper apps most users never open.",
+      "entries": [
+        {
+          "id": "HPSupportAssistant",
+          "matchNames": ["HP Support Assistant", "HPSA"],
+          "matchCommandSubstrings": ["HP\\Support Assistant", "HPSA.exe"],
+          "reason": "HP Support Assistant tray. Ask user — some rely on it for driver alerts."
+        },
+        {
+          "id": "LenovoVantage",
+          "matchNames": ["Lenovo Vantage Service Toaster", "Lenovo Vantage"],
+          "matchCommandSubstrings": ["Lenovo\\VantageService", "LenovoVantage-"],
+          "reason": "Lenovo Vantage nag/toast. The service runs regardless — this is just the Run-key nag."
+        },
+        {
+          "id": "DellSupportAssist",
+          "matchNames": ["Dell SupportAssist Remediation"],
+          "matchCommandSubstrings": ["Dell\\SupportAssistAgent"],
+          "reason": "Dell nag tray."
+        },
+        {
+          "id": "AsusFramework",
+          "matchNames": ["ArmouryCrateControlInterface", "ArmoryCrate"],
+          "matchCommandSubstrings": ["ASUS\\ArmouryCrate", "Armoury Crate"],
+          "reason": "Asus Armoury Crate autostart — heavy tray."
+        }
+      ]
+    },
+    "third_party_utility_nag": {
+      "reason_group": "Third-party tray utilities that spawn nags.",
+      "entries": [
+        {
+          "id": "CCleanerTray",
+          "matchNames": ["CCleaner Smart Cleaning"],
+          "matchCommandSubstrings": ["CCleaner\\CCleaner64.exe /MONITOR"],
+          "reason": "CCleaner monitoring tray. Ask user."
+        },
+        {
+          "id": "McAfeeWebAdvisor",
+          "matchNames": ["McAfee WebAdvisor"],
+          "matchCommandSubstrings": ["McAfee\\WebAdvisor"],
+          "reason": "McAfee WebAdvisor tray — browser extension companion. Disable if the browser extension is removed."
+        },
+        {
+          "id": "NortonSecurity",
+          "matchNames": ["Norton Security"],
+          "matchCommandSubstrings": ["Norton\\Norton.exe"],
+          "reason": "Norton auto-start nag."
+        },
+        {
+          "id": "AvastUI",
+          "matchNames": ["AvastUI"],
+          "matchCommandSubstrings": ["AVAST Software\\Avast\\AvLaunch.exe"],
+          "reason": "Avast tray nag. AV engine runs as a service regardless."
+        }
+      ]
+    }
+  }
+}
