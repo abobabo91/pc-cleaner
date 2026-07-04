@@ -27,95 +27,199 @@ For each service still tagged UNCLASSIFIED, decide:
 
 Never override a KEEP-TRIPWIRE.
 
-### 3. Batch the MAYBEs into ≤4 grouped multi-select questions
+### 3. Ask the MAYBEs one by one, conversationally, adaptive
 
-**Two rules for every question:**
+**Approach:** Each MAYBE gets its own quick yes/no/"I'm not sure" question. This is a conversation, not a form. Total questions typically 4-8 per machine (many get skipped by hardware detection).
 
-**Rule A — Plain English, no jargon.** No `SMB`, `MDM`, `HKCU`, `WSearch`, `ssh-agent` in what the user reads. Describe what the thing is FOR.
+**Adaptive skip:** Before asking any question, check the skip condition. If it applies, don't ask — that item is decided by evidence alone. All questions offer three answers: `Yes`, `No`, `I'm not sure`. "I'm not sure" triggers the inference rule.
 
-**Rule B — Always include "I'm not sure" as an option.** Most users honestly don't know if they use SMB, Miracast, IPv6, or SSH. Never make them guess. When they pick "I'm not sure", auto-detect from evidence on the machine (see the inference rules below each question) and treat the answer as if they said yes or no accordingly.
-
-Ask exactly this shape (adjust items to what's actually installed on THIS machine):
+The questions, in the order they should be asked (skip any whose condition fails):
 
 ---
 
-**Q1 — "What do you actually use on this computer?" (check all that apply)**
-- [ ] I print or scan documents from this computer
-- [ ] I unlock this laptop with my face or fingerprint (Windows Hello)
-- [ ] I like when my laptop's screen brightness adjusts automatically as I move between dim and bright rooms
-- [ ] I care about surround sound / Dolby Atmos on my headphones or speakers
-- [ ] **I'm not sure — figure it out for me**
+**Q1 — Printer / scanner**
+> "Do you print documents or scan things from this computer?"
 
-If the user picks "I'm not sure" (or leaves some items blank), auto-detect:
-- **Printer/scanner:** `Get-Printer | Where-Object { $_.Type -ne 'Local' -or $_.PrinterStatus -eq 'Normal' }` — if zero real printers OR none used in last 90 days (check job history), infer NO.
-- **Face/fingerprint:** check registry `HKLM:\SOFTWARE\Microsoft\Windows Hello for Business` and `Get-PnpDevice -Class Biometric` — if no biometric device or Hello not enrolled, infer NO.
-- **Auto-brightness:** check for ambient light sensor `Get-PnpDevice | Where-Object { $_.Class -eq 'Sensor' -and $_.FriendlyName -match 'ambient|light' }` — no sensor = NO.
-- **Dolby Atmos:** check if Dolby Access app is installed OR `DolbyDAXAPI` service is currently running — otherwise NO.
+*Skip if:* `Get-Printer` returns only default Microsoft PDF/XPS/OneNote-Send print destinations. (No real printer = don't even ask.)
+
+*"I'm not sure" inference:* If any real printer is configured AND has been used in the last 90 days (check `Get-PrintJob` history), → YES. Otherwise → NO.
+
+*Controls:* `Spooler`, `PrintNotify`, `PrintWorkflowUserSvc_bd465`, `McpManagementService`, `WiaRpc`, `StiSvc`.
 
 ---
 
-**Q2 — "How do you use your home network?" (check all that apply)**
-- [ ] I share files or a printer from this computer so my phone, tablet, or other computers on my WiFi can see them
-- [ ] I sometimes send my screen or music/video from this laptop to a TV or speaker wirelessly (like Chromecast / AirPlay / Miracast — not via HDMI cable)
-- [ ] I connect to a VPN using Windows' built-in feature (Settings → Network & internet → VPN) — NOT a separate app like NordVPN, OpenVPN, or ExpressVPN
-- [ ] **I'm not sure — figure it out for me**
+**Q2 — Face or fingerprint login**
+> "Do you unlock this laptop with your face or fingerprint? (Windows Hello)"
 
-Inference for "I'm not sure":
-- **Share files:** `Get-SmbShare | Where-Object { $_.Name -notin 'ADMIN$','C$','IPC$','print$' }` — if zero user-created shares, NO.
-- **Cast/Miracast:** almost never true for typical users. If unsure → NO. Only check YES if `Get-Process | Where-Object { $_.Name -match 'miracast|castto' }` has run recently.
-- **Windows VPN:** `Get-VpnConnection` — if zero configured, NO. If OpenVPN is running as a service (already detected in profile), the user isn't using Windows VPN.
+*Skip if:* `Get-PnpDevice -Class Biometric` returns nothing. (No biometric hardware = don't ask.)
+
+*"I'm not sure" inference:* Check registry `HKLM:\SOFTWARE\Microsoft\Windows Hello`. If not enrolled → NO.
+
+*Controls:* `WbioSrvc`.
 
 ---
 
-**Q3 — "Which Microsoft things do you actually use?" (check all that apply)**
-- [ ] OneDrive — my Microsoft cloud storage, even just occasionally
-- [ ] Word, Excel, or PowerPoint installed as desktop apps (NOT just in the browser)
-- [ ] Microsoft Edge as my browser — main OR backup
-- [ ] Windows Copilot, or the new Mail / Calendar apps
-- [ ] **I'm not sure**
+**Q3 — Auto-brightness**
+> "Do you like when your laptop's screen brightness changes automatically as you move between dim and bright rooms?"
 
-Inference:
-- **OneDrive:** `Get-Process OneDrive` running OR registry `HKCU:\Software\Microsoft\OneDrive\Accounts\Personal` shows an account. If neither, NO.
-- **Office desktop:** `ClickToRunSvc` service Running OR `C:\Program Files\Microsoft Office` exists with recent access time. If neither, NO.
-- **Edge:** check `%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Preferences` `last_active_time` — if older than 90 days, NO.
-- **Copilot / UWP Mail:** UserAssist launch count — if never launched, NO.
+*Skip if:* No ambient light sensor. Check `Get-PnpDevice -Class Sensor | Where-Object FriendlyName -match 'ambient|light'`.
+
+*"I'm not sure" inference:* Currently ON (service running)? → YES. Currently disabled? → NO.
+
+*Controls:* `SensrSvc`.
 
 ---
 
-**Q4 — "Last few things:" (check all that apply)**
-- [ ] I want the Start menu to find my files when I type — like searching for a document by name (this uses about 200 MB of memory constantly; turn it off only if you use Everything by voidtools)
-- [ ] I write code and use Git / SSH from a command line (this is a coder tool — if you don't know what SSH is, you don't need it)
-- [ ] I still actively use Dropbox
-- [ ] I use Comet, the AI browser from Perplexity
-- [ ] **I'm not sure**
+**Q4 — Surround sound**
+> "Do you use surround sound / spatial audio like Dolby Atmos on your headphones or speakers?"
 
-Inference:
-- **Windows Search:** default KEEP unless the user has Everything (`voidtools.Everything`) installed. If they do have Everything, ask explicitly: "You have Everything installed — turn off Windows Search to save memory?"
-- **Git/SSH:** check `git` in PATH OR `%USERPROFILE%\.gitconfig` exists OR any repo under Desktop/Documents. If none, NO — most non-developers won't have any of these.
-- **Dropbox:** `Get-Process Dropbox` running OR `HKCU:\Software\Dropbox` has a recent access. If neither, NO — and flag Dropbox for uninstall in the `bloat` module instead.
-- **Comet:** check installed apps. If not installed, skip the question entirely.
+*Skip if:* Neither Dolby Access app nor `DolbyDAXAPI` service is present.
+
+*"I'm not sure" inference:* → NO. (Almost nobody knowingly uses spatial audio without deliberately setting it up.)
+
+*Controls:* `VacSvc`, `FMAPOService`, `DolbyDAXAPI`.
 
 ---
 
-**Adaptive question phrasing:** Don't ask about things that aren't relevant to this machine.
-- Skip Q1 face/fingerprint item if no biometric hardware exists.
-- Skip Q1 auto-brightness item if no ambient light sensor exists.
-- Skip Q2 Windows VPN item if the user has OpenVPN or another VPN app running (they've already answered).
-- Skip Q4 Comet item if Comet isn't installed.
+**Q5 — File sharing on WiFi**
+> "Do you share files or a printer from THIS computer with other devices on your WiFi? (Meaning: others can open folders on this laptop from their own devices. Not just accessing others.)"
 
-**On "I'm not sure":** Show the user what was auto-detected so they learn:
+*Skip if:* `Get-SmbShare` returns only default admin shares (ADMIN$, C$, IPC$, print$).
+
+*"I'm not sure" inference:* → NO. (Real user-hosted shares are almost always intentional and the user knows.)
+
+*Controls:* `LanmanServer`, `lmhosts`.
+
+---
+
+**Q6 — Casting to a TV or speaker**
+> "Do you ever cast your screen or music from this laptop to a TV or speaker wirelessly? (Like Chromecast, AirPlay, or Miracast. Not via an HDMI cable.)"
+
+*"I'm not sure" inference:* → NO. If a Miracast display was recently connected (check event log for `PLAYTO` or `Miracast` events), → YES.
+
+*Controls:* `WFDSConMgrSvc`, `fdPHost`, `SSDPSRV`.
+
+---
+
+**Q7 — Windows built-in VPN**
+> "Do you connect to a VPN using Windows' built-in feature? (Settings → Network & internet → VPN.) NOT a separate app like NordVPN, ExpressVPN, or OpenVPN."
+
+*Skip if:* User is running OpenVPN as a service OR any third-party VPN app was detected in the profile step. (Answering has already been implied.)
+
+*"I'm not sure" inference:* `Get-VpnConnection` returns zero → NO.
+
+*Controls:* `RasMan`.
+
+---
+
+**Q8 — OneDrive**
+> "Do you use OneDrive — Microsoft's cloud storage? (Even just occasionally.)"
+
+*"I'm not sure" inference:* `Get-Process OneDrive` running OR `HKCU:\Software\Microsoft\OneDrive\Accounts\Personal` has an account? YES. Otherwise NO.
+
+*Controls:* `OneSyncSvc_bd465`, `CloudBackupRestoreSvc_bd465`. (Note: OneDrive Updater / FileSyncHelper always kept if this is YES.)
+
+---
+
+**Q9 — Office desktop apps**
+> "Do you use Word, Excel, or PowerPoint as installed apps? (Not the free online versions in your browser.)"
+
+*"I'm not sure" inference:* `ClickToRunSvc` service exists? OR `C:\Program Files\Microsoft Office` with recent access? → YES. Otherwise → NO.
+
+*Controls:* `ClickToRunSvc`.
+
+---
+
+**Q10 — Microsoft Edge**
+> "Do you use Microsoft Edge as your web browser — either your main one or a backup?"
+
+*"I'm not sure" inference:* `%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Preferences` — check `last_active_time`. Used within last 90 days → YES. Otherwise → NO.
+
+*Controls:* `edgeupdate`, `edgeupdatem`.
+
+---
+
+**Q11 — Copilot or new UWP apps**
+> "Do you use Windows Copilot (the AI assistant), or the new Mail / Calendar apps that came with Windows 11?"
+
+*"I'm not sure" inference:* UserAssist launch counts. Any of them launched in last 90 days → YES. Otherwise → NO.
+
+*Controls:* `MicrosoftCopilotElevationService`, plus per-user Mail/Calendar template services.
+
+---
+
+**Q12 — Windows file search in Start menu**
+> "When you open the Start menu and type a filename, do you want Windows to find it? (Turning this off saves about 200 MB of memory but you'll need another way to search files, like the app 'Everything'.)"
+
+*"I'm not sure" inference:* If `voidtools.Everything` is installed → suggest turning off (they have an alternative). Otherwise → KEEP ON.
+
+*Controls:* `WSearch`.
+
+---
+
+**Q13 — Git / SSH from command line**
+> "Do you write code and use Git or SSH from a terminal? (This is a coder tool. If you don't recognize the names, you don't use it — that's fine.)"
+
+*Skip if:* No sign of coding on the machine. Check: no `git` in PATH, no `%USERPROFILE%\.gitconfig`, no `Git.Git` in winget list, no repo folders under Desktop/Documents. If ALL absent, don't ask — just skip enabling ssh-agent.
+
+*"I'm not sure" inference:* Any of the above present → YES (turn on ssh-agent). None → NO.
+
+*Controls:* `ssh-agent`.
+
+---
+
+**Q14 — Dropbox**
+> "Do you still actively use Dropbox?"
+
+*Skip if:* Dropbox process not running AND registry `HKCU:\Software\Dropbox` doesn't exist. (Dropbox isn't installed.)
+
+*"I'm not sure" inference:* Dropbox process running today → YES. Registry account with `last_synced` in last 90 days → YES. Otherwise → NO, and flag Dropbox for uninstall in the `bloat` module instead.
+
+*Controls:* `DbxSvc`.
+
+---
+
+**Q15 — Comet browser**
+> "Do you use Comet — the AI browser from Perplexity?"
+
+*Skip if:* Comet isn't installed.
+
+*"I'm not sure" inference:* Recent launch within 30 days → YES. Otherwise → NO, and flag for uninstall in the `bloat` module.
+
+*Controls:* `CometElevationService`, `CometUpdaterService*`.
+
+---
+
+### After all questions, show the decision summary
+
+Format like a friendly recap before applying:
+
 ```
-Auto-detected for you:
-- Printer/scanner: NO (no printers configured)
-- Face/fingerprint: NO (no biometric hardware)
-- Windows VPN: NO (0 VPN connections in Windows Settings — you use OpenVPN separately)
-- Git/SSH: NO (no .gitconfig, no git in PATH)
+Here's what I figured out and what I'll change:
+
+  Print / scan:          NO   (you said no)
+  Face / fingerprint:    (skipped — no fingerprint sensor on this laptop)
+  Auto-brightness:       (skipped — no light sensor)
+  Surround sound:        NO   (auto-detected: Dolby Access not installed)
+  Share files on WiFi:   NO   (auto-detected: no shared folders on this PC)
+  Cast to TV:            NO   (you said no)
+  Windows VPN:           (skipped — you use OpenVPN, so we know)
+  OneDrive:              NO   (auto-detected: not signed in)
+  Office desktop apps:   NO   (auto-detected: not installed)
+  Edge browser:          NO   (auto-detected: not opened in 90+ days)
+  Copilot / new Mail:    NO   (auto-detected: never launched)
+  Windows Search:        YES  (kept — you didn't say to turn it off)
+  Git / SSH:             (skipped — no coding tools detected)
+  Dropbox:               (skipped — not installed)
+  Comet:                 (skipped — not installed)
+
+I'll disable 87 services total.
+Continue?  [Yes / No / Show me the list]
 ```
-Then apply based on those inferences.
 
-Use `AskUserQuestion` with `multiSelect: true`. Anything the user does NOT check AND the inference says NO → disable. Anything they check → mark KEEP-FOR-YOU.
+Anything the user challenges here → flip the decision, adjust the plan, ask them to confirm again.
 
-Keep the raw service names (`Spooler`, `WSearch`, `LanmanServer`, etc.) INTERNAL — used in the plan JSON and log, never shown to the user.
+Use `AskUserQuestion` with `multiSelect: false` (single-select yes/no/not-sure) — one call per question. Keep raw service names (`Spooler`, `WSearch`, `LanmanServer`, etc.) INTERNAL — never shown in the visible text.
 
 ### 4. Build the plan JSON
 
