@@ -127,6 +127,55 @@ Optional included: power, drivers.
 
 Then execute the orchestration flow above.
 
+## Cross-module contracts
+
+These are shared invariants the orchestrator owns so no individual module has to know about the others.
+
+### 1. profile.flags — the single source of truth
+
+`ps/diagnose/profile.ps1` emits `profile.flags` — a boolean map every other module reads.
+Defined flags (extend only when adding a module):
+
+- `isLaptop` — has battery
+- `isRyzen6kPlus` — Ryzen 6000+ (Modern Standby unreliable, WLAN LPS matters)
+- `isIntelIce11Plus` — Intel 11th gen+ (also modern-standby-only)
+- `hasDGPU` — discrete GPU present in addition to iGPU
+- `wlanOEMMismatch` — machine OEM ≠ WLAN card subsystem OEM (blocks OEM driver updates)
+- `hasCombo8822CE` / `hasCombo8852BE` — combo cards where WLAN LPS affects BT
+- `recentBSODs` — any minidumps in last 30 days (triggers `crashdumps` prompt)
+- `hasWHEAErrors` — WHEA-Logger events in last 30 days (real hardware issue)
+- `isDomainJoined` — extra services stay KEEP
+- `hasDefenderRTP` — Defender still active
+
+Modules must NOT recompute these; they read from `profile.json`.
+
+### 2. Explorer restart is deferred to end of run
+
+`explorer`, `tray-taskbar`, and some `bloat` UWP removals want `Stop-Process explorer` + auto-restart to see the change. Do NOT restart Explorer inside each module — set `pendingExplorerRestart = true` in the run state and let the top-level orchestrator do it once at the end. Otherwise you get 3+ Explorer flickers per run.
+
+### 3. WLAN adapter cycle is batched
+
+`power`, `network`, and `drivers` may all touch WLAN driver registry values. Do NOT `Restart-NetAdapter` inside each module. Set `pendingWLANCycle = true` and let the orchestrator do one restart at the end. Losing WiFi mid-run is worse than losing it once at the end.
+
+### 4. Storage vs unused-apps: Prefetch ordering
+
+`unused-apps` reads `C:\Windows\Prefetch\*.pf` to compute last-launched times. `storage` may propose Prefetch cleanup. If both run in the same session, `unused-apps` MUST run first, and `storage` MUST skip Prefetch cleanup for that session. This is a runtime coordination in the orchestrator, not a module default.
+
+### 5. AskUserQuestion budget
+
+Individual modules cap at ≤4 grouped multi-select questions. But 15 modules × 4 = 60 total is not acceptable. The orchestrator enforces:
+
+- **Full CORE run**: ≤10 total questions across all modules. Modules must skip low-value questions when running as part of a full flow.
+- **Full CORE + selected OPTIONALs**: +2 per opted-in optional module max.
+- **Single module invoked directly**: module's full quota.
+- **`quick` mode** (add `/pc-cleaner quick`): CORE only, zero questions. All MAYBEs decided as "leave alone".
+
+Front-load: gather all questions once at the start of the run, do the whole apply pass unattended.
+
+### 6. Shared crash → driver linkage
+
+`crashdumps` produces `crash_linked_drivers.json` (drivers that appeared in `!analyze -v` MODULE_NAME output). `drivers` reads that file and prioritizes updating those drivers first. Path: `<snapshotRoot>/crash_linked_drivers.json` — shared across modules in the same run.
+
 ## Not in scope
 
 - **Do NOT touch Windows Defender's real-time protection.** Only add path exclusions for dev folders in the `defender` module, and only if user opts in.
