@@ -1,0 +1,27 @@
+# Snapshots produced at runtime should not be committed
+pc-cleaner-snapshots/
+*.snapshot.json
+*.snapshot.reg
+*.snapshot.csv
+
+# Local machine artifacts
+services_raw.json
+services_slim.txt
+services_audit.md
+services_before_cleanup.csv
+services_to_disable.txt
+cleanup_log.txt
+cleanup_fix_log.txt
+symcache/
+bsod-dumps/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+
+# PowerShell temp
+*.tmp.ps1

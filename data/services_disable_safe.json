@@ -1,0 +1,147 @@
+{
+  "_comment": "Services safe to disable for a typical solo-user Windows 11 machine (not domain-joined, no enterprise MDM, no cellular modem, no printer, no gaming, no fax). Each entry: name, reason.",
+  "categories": {
+    "cellular_modem": {
+      "reason_group": "No cellular modem in most laptops",
+      "services": {
+        "WwanSvc":     "WWAN AutoConfig (LTE modem)",
+        "wlpasvc":     "Cellular Local Profile Assistant",
+        "icssvc":      "Windows Mobile Hotspot Service",
+        "autotimesvc": "Cellular NITZ time",
+        "SmsRouter":   "SMS routing over cellular"
+      }
+    },
+    "enterprise_mdm": {
+      "reason_group": "Not domain-joined, not MDM-managed",
+      "services": {
+        "dcsvc":               "Declared Configuration",
+        "NcaSvc":              "Network Connectivity Assistant (DirectAccess)",
+        "Netlogon":            "Domain secure channel",
+        "EntAppSvc":           "Enterprise App Management",
+        "WManSvc":             "Windows Management Service (provisioning)",
+        "DmEnrollmentSvc":     "MDM enrollment",
+        "dmwappushservice":    "WAP push (MDM channel)",
+        "wisvc":               "Windows Insider",
+        "workfolderssvc":      "Work Folders sync",
+        "NcdAutoSetup":        "Network Connected Devices Auto-Setup",
+        "MSiSCSI":             "iSCSI initiator",
+        "IpxlatCfgSvc":        "IPv6 464XLAT for cellular carriers",
+        "SNMPTrap":            "SNMP trap receiver",
+        "WEPHOSTSVC":          "3rd-party FDE broker"
+      }
+    },
+    "legacy_networking": {
+      "reason_group": "Legacy P2P/discovery protocols",
+      "services": {
+        "wcncsvc":     "Windows Connect Now (WPS)",
+        "lltdsvc":     "Link-Layer Topology Discovery Mapper",
+        "FDResPub":    "Function Discovery Resource Publication",
+        "upnphost":    "UPnP Device Host",
+        "QWAVE":       "Quality Windows Audio Video Experience (QoS)",
+        "p2pimsvc":    "Peer Networking Identity Manager (PNRP)",
+        "p2psvc":      "Peer Networking Grouping (HomeGroup)",
+        "PNRPAutoReg": "PNRP Machine Name Publication",
+        "PNRPsvc":     "Peer Name Resolution Protocol",
+        "ALG":         "Application Layer Gateway (ICS)",
+        "TapiSrv":     "Telephony API",
+        "AJRouter":    "AllJoyn IoT mesh",
+        "WebClient":   "WebDAV client",
+        "SstpSvc":     "SSTP VPN (built-in)",
+        "RasAuto":     "Remote Access Auto Connection"
+      }
+    },
+    "smart_cards": {
+      "reason_group": "No smart cards",
+      "services": {
+        "CertPropSvc":   "Certificate Propagation from smart cards",
+        "SCardSvr":      "Smart Card",
+        "ScDeviceEnum":  "Smart Card Device Enumeration",
+        "SCPolicySvc":   "Smart Card Removal Policy",
+        "SEMgrSvc":      "Payments and NFC/SE Manager"
+      }
+    },
+    "windows_features_off_by_default": {
+      "reason_group": "Consumer OS features nobody uses",
+      "services": {
+        "NaturalAuthentication": "Enterprise Dynamic Lock",
+        "WalletService":         "Wallet/Passes UWP",
+        "AarSvc":                "Agent Activation Runtime (Cortana era)",
+        "MessagingService":      "SMS/messaging (Phone Link)",
+        "PimIndexMaintenanceSvc":"People/Contacts index",
+        "UnistoreSvc":           "UWP Mail/People/Calendar store",
+        "UserDataSvc":           "UWP Mail/People/Calendar access",
+        "PenService":            "Windows Ink",
+        "WMPNetworkSvc":         "WMP DLNA server",
+        "RetailDemo":            "Store display mode",
+        "TroubleshootingSvc":    "Auto-run MS troubleshooters",
+        "WpcMonSvc":             "Parental Controls",
+        "GraphicsPerfSvc":       "Xbox Game Bar GPU counters",
+        "MapsBroker":            "Downloaded Maps",
+        "tzautoupdate":          "Auto Time Zone from location",
+        "AxInstSV":              "ActiveX Installer (IE)",
+        "embeddedmode":          "Embedded/IoT mode",
+        "EFS":                   "Encrypting File System"
+      }
+    },
+    "printer_scanner": {
+      "reason_group": "No printer or scanner",
+      "services": {
+        "Spooler":                "Print Spooler (also closes PrintNightmare CVE class)",
+        "PrintNotify":            "Print dialogs/notifications",
+        "PrintWorkflowUserSvc":   "Modern print workflow",
+        "McpManagementService":   "Microsoft Universal Print (Azure)",
+        "WiaRpc":                 "Scanner button events",
+        "StiSvc":                 "Windows Image Acquisition (scanner/camera)"
+      }
+    },
+    "storage_spaces_backup": {
+      "reason_group": "No Storage Spaces + no Windows Backup",
+      "services": {
+        "TieringEngineService": "Storage Spaces tier optimization",
+        "smphost":              "Microsoft Storage Spaces SMP",
+        "wbengine":             "Block-Level Backup Engine",
+        "SDRSVC":               "Windows Backup",
+        "fhsvc":                "File History",
+        "TrkWks":               "Distributed Link Tracking (legacy)"
+      }
+    },
+    "telemetry_errorreports": {
+      "reason_group": "Reduce background CPU/net + privacy",
+      "services": {
+        "DiagTrack":       "Connected User Experiences and Telemetry (CEIP)",
+        "InventorySvc":    "Inventory and Compat Appraiser (CompatTelRunner)",
+        "PushToInstall":   "Remote install from Store web",
+        "WerSvc":          "Windows Error Reporting (upload)",
+        "wercplsupport":   "WER Control Panel UI",
+        "Wecsvc":          "Windows Event Collector (WS-Man subscriptions)",
+        "WinRM":           "Windows Remote Management (WS-Man)"
+      }
+    },
+    "gaming": {
+      "reason_group": "Not a gaming machine (adjust if the user games)",
+      "services": {
+        "BcastDVRUserService": "Game DVR + Broadcast (per-user)",
+        "GameInputSvc":        "GameInput Service",
+        "GameInputRedistService": "GameInput Redist companion",
+        "EpicGamesUpdater":    "Epic launcher updater",
+        "EpicOnlineServices":  "Epic game backend"
+      }
+    },
+    "remote_desktop_host": {
+      "reason_group": "Not hosting RDP to this machine",
+      "services": {
+        "TermService":    "Remote Desktop Services host",
+        "SessionEnv":     "RDP configuration",
+        "UmRdpService":   "RDP printer/drive redirection"
+      }
+    },
+    "mixed_reality": {
+      "reason_group": "No WMR headset",
+      "services": {
+        "MixedRealityOpenXRSvc": "WMR OpenXR",
+        "perceptionsimulation": "WMR perception simulator",
+        "spectrum":             "Windows Perception"
+      }
+    }
+  }
+}
