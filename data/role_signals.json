@@ -1,0 +1,98 @@
+{
+  "_comment": "Signals used to detect the user's primary role(s) for the ninite-personalized module. Each signal has a weight; sum weights per role and pick the top-scoring role(s) above a threshold. A user can qualify for multiple roles (e.g. dev + gamer). Signal types: winget (installed via winget list), process (currently running or historical via UserAssist), registry (uninstall key presence), folder (path exists).",
+  "_threshold": "Score >= 3 = role active. Ties are OK — multi-role is a normal outcome. If no role scores >= 3, offer only the 'always_useful' bundle.",
+  "_matchRule": "Case-insensitive substring match on pattern. For process signals, check both currently-running (Get-Process) and historically-used (UserAssist within last 90 days). For folder signals, existence + at least one file inside.",
+  "roles": [
+    {
+      "role": "dev",
+      "signals": [
+        { "type": "process", "pattern": "docker.exe", "weight": 3 },
+        { "type": "process", "pattern": "code.exe", "weight": 2 },
+        { "type": "process", "pattern": "node.exe", "weight": 2 },
+        { "type": "process", "pattern": "python.exe", "weight": 2 },
+        { "type": "process", "pattern": "cargo.exe", "weight": 3 },
+        { "type": "process", "pattern": "wsl.exe", "weight": 2 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\Desktop\\github", "weight": 3 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\Documents\\GitHub", "weight": 2 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\source\\repos", "weight": 2 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\.cargo", "weight": 2 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\.rustup", "weight": 2 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\.gradle", "weight": 1 },
+        { "type": "winget", "pattern": "Git.Git", "weight": 3 },
+        { "type": "winget", "pattern": "Docker.DockerDesktop", "weight": 3 },
+        { "type": "winget", "pattern": "Microsoft.VisualStudioCode", "weight": 2 },
+        { "type": "winget", "pattern": "GitHub.cli", "weight": 2 },
+        { "type": "winget", "pattern": "JetBrains.", "weight": 2 },
+        { "type": "registry", "pattern": "HKLM:\\SOFTWARE\\Microsoft\\VisualStudio", "weight": 2 }
+      ]
+    },
+    {
+      "role": "creative",
+      "signals": [
+        { "type": "process", "pattern": "Photoshop.exe", "weight": 3 },
+        { "type": "process", "pattern": "Illustrator.exe", "weight": 3 },
+        { "type": "process", "pattern": "AfterFX.exe", "weight": 3 },
+        { "type": "process", "pattern": "Premiere Pro.exe", "weight": 3 },
+        { "type": "process", "pattern": "Resolve.exe", "weight": 3 },
+        { "type": "process", "pattern": "blender.exe", "weight": 2 },
+        { "type": "process", "pattern": "gimp-2.10.exe", "weight": 2 },
+        { "type": "process", "pattern": "obs64.exe", "weight": 1 },
+        { "type": "process", "pattern": "audacity.exe", "weight": 1 },
+        { "type": "winget", "pattern": "Adobe.Photoshop", "weight": 3 },
+        { "type": "winget", "pattern": "Adobe.Illustrator", "weight": 3 },
+        { "type": "winget", "pattern": "Blackmagic.DaVinciResolve", "weight": 3 },
+        { "type": "winget", "pattern": "BlenderFoundation.Blender", "weight": 2 },
+        { "type": "winget", "pattern": "GIMP.GIMP", "weight": 1 },
+        { "type": "folder", "pattern": "%USERPROFILE%\\Documents\\Adobe", "weight": 1 },
+        { "type": "registry", "pattern": "HKLM:\\SOFTWARE\\Adobe", "weight": 2 }
+      ]
+    },
+    {
+      "role": "gamer",
+      "signals": [
+        { "type": "process", "pattern": "steam.exe", "weight": 3 },
+        { "type": "process", "pattern": "EpicGamesLauncher.exe", "weight": 3 },
+        { "type": "process", "pattern": "Battle.net.exe", "weight": 3 },
+        { "type": "process", "pattern": "GOG Galaxy.exe", "weight": 2 },
+        { "type": "process", "pattern": "Discord.exe", "weight": 1 },
+        { "type": "process", "pattern": "MSIAfterburner.exe", "weight": 2 },
+        { "type": "winget", "pattern": "Valve.Steam", "weight": 3 },
+        { "type": "winget", "pattern": "EpicGames.EpicGamesLauncher", "weight": 3 },
+        { "type": "winget", "pattern": "Blizzard.BattleNet", "weight": 3 },
+        { "type": "winget", "pattern": "GOG.Galaxy", "weight": 2 },
+        { "type": "folder", "pattern": "C:\\Program Files (x86)\\Steam\\steamapps", "weight": 3 },
+        { "type": "folder", "pattern": "C:\\Program Files\\Epic Games", "weight": 2 },
+        { "type": "registry", "pattern": "HKCU:\\Software\\Valve\\Steam", "weight": 3 }
+      ]
+    },
+    {
+      "role": "office",
+      "signals": [
+        { "type": "process", "pattern": "WINWORD.EXE", "weight": 3 },
+        { "type": "process", "pattern": "EXCEL.EXE", "weight": 3 },
+        { "type": "process", "pattern": "OUTLOOK.EXE", "weight": 3 },
+        { "type": "process", "pattern": "POWERPNT.EXE", "weight": 2 },
+        { "type": "process", "pattern": "Zoom.exe", "weight": 2 },
+        { "type": "process", "pattern": "Teams.exe", "weight": 2 },
+        { "type": "process", "pattern": "OneDrive.exe", "weight": 1 },
+        { "type": "winget", "pattern": "Microsoft.Office", "weight": 3 },
+        { "type": "winget", "pattern": "Microsoft365.Apps", "weight": 3 },
+        { "type": "winget", "pattern": "Notion.Notion", "weight": 1 },
+        { "type": "registry", "pattern": "HKLM:\\SOFTWARE\\Microsoft\\Office", "weight": 2 }
+      ]
+    },
+    {
+      "role": "student",
+      "signals": [
+        { "type": "process", "pattern": "Anki.exe", "weight": 3 },
+        { "type": "process", "pattern": "zotero.exe", "weight": 3 },
+        { "type": "process", "pattern": "Obsidian.exe", "weight": 2 },
+        { "type": "process", "pattern": "Zoom.exe", "weight": 1 },
+        { "type": "winget", "pattern": "Anki.Anki", "weight": 3 },
+        { "type": "winget", "pattern": "Zotero.Zotero", "weight": 3 },
+        { "type": "winget", "pattern": "Obsidian.Obsidian", "weight": 2 },
+        { "type": "winget", "pattern": "TheDocumentFoundation.LibreOffice", "weight": 2 }
+      ]
+    }
+  ]
+}

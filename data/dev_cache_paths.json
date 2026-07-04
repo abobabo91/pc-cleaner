@@ -1,0 +1,187 @@
+{
+  "_comment": "Canonical developer toolchain cache directories worth excluding from Defender realtime scans. Trades a small attack-surface increase for large I/O speedups on npm install / cargo build / pip install / docker build. Real-time protection stays on globally — only these subdirectories are added to Add-MpPreference -ExclusionPath. Fields: id, name, path (env vars expanded at runtime), languages (array), rationale, containsExecutables (bool — if true, adds real risk: Defender would normally scan node_modules/*.exe, esbuild binaries, .cargo/bin/*.exe), riskNote. The defender module snapshots the current Add-MpPreference list before adding, so revert is one-shot.",
+  "_scanPolicy": "The apply script should verify each path EXISTS before excluding it (avoid noisy false paths). Also warn the user if any path resolves outside the user profile — that suggests a non-standard config we shouldn't blanket-exclude.",
+  "entries": [
+    {
+      "id": "node_npm_appdata_cache",
+      "name": "npm cache (Roaming)",
+      "path": "%APPDATA%\\npm-cache",
+      "languages": ["node"],
+      "rationale": "npm download+tarball cache. Regenerable. Heavy churn during install.",
+      "containsExecutables": false,
+      "riskNote": "Low risk. Tarballs are opened by npm, not directly executed."
+    },
+    {
+      "id": "node_npm_local_cache",
+      "name": "npm cache (Local)",
+      "path": "%LOCALAPPDATA%\\npm-cache",
+      "languages": ["node"],
+      "rationale": "Alternate npm cache location on some setups.",
+      "containsExecutables": false,
+      "riskNote": "Low risk."
+    },
+    {
+      "id": "node_pnpm_store",
+      "name": "pnpm content-addressable store",
+      "path": "%LOCALAPPDATA%\\pnpm-store",
+      "languages": ["node"],
+      "rationale": "pnpm's global content-addressable store. Hard-linked into node_modules — Defender scans it repeatedly per project without exclusion.",
+      "containsExecutables": true,
+      "riskNote": "Contains .exe binaries from packages like esbuild, sharp, prisma. Excluding means those aren't RT-scanned. Consider excluding only the package tarballs subdir (%LOCALAPPDATA%\\pnpm-store\\v3\\files) if paranoid."
+    },
+    {
+      "id": "node_yarn_cache",
+      "name": "Yarn cache",
+      "path": "%LOCALAPPDATA%\\Yarn\\Cache",
+      "languages": ["node"],
+      "rationale": "Yarn tarball cache.",
+      "containsExecutables": false,
+      "riskNote": "Low risk."
+    },
+    {
+      "id": "python_pip_cache",
+      "name": "pip cache",
+      "path": "%LOCALAPPDATA%\\pip\\Cache",
+      "languages": ["python"],
+      "rationale": "pip wheel + http cache. High churn.",
+      "containsExecutables": false,
+      "riskNote": "Low risk — wheels are unpacked by pip at install time, not directly executed."
+    },
+    {
+      "id": "python_appdata",
+      "name": "Python per-user site",
+      "path": "%APPDATA%\\Python",
+      "languages": ["python"],
+      "rationale": "Per-user Python site-packages roots (e.g. Python313\\site-packages).",
+      "containsExecutables": true,
+      "riskNote": "Contains .pyd + .dll from wheels. Defender still scans installed .exe entry points elsewhere. Acceptable trade for build speed."
+    },
+    {
+      "id": "python_uv_cache",
+      "name": "uv cache",
+      "path": "%LOCALAPPDATA%\\uv\\cache",
+      "languages": ["python"],
+      "rationale": "Astral uv global cache. Very heavy write churn.",
+      "containsExecutables": false,
+      "riskNote": "Low risk."
+    },
+    {
+      "id": "python_poetry_cache",
+      "name": "Poetry cache",
+      "path": "%LOCALAPPDATA%\\pypoetry\\Cache",
+      "languages": ["python"],
+      "rationale": "Poetry download + virtualenv cache.",
+      "containsExecutables": false,
+      "riskNote": "Low risk."
+    },
+    {
+      "id": "rust_cargo",
+      "name": "Cargo home",
+      "path": "%USERPROFILE%\\.cargo",
+      "languages": ["rust"],
+      "rationale": "Cargo registry cache, git cache, and installed binaries. Cargo build is one of the most scan-sensitive workloads on Windows.",
+      "containsExecutables": true,
+      "riskNote": "Contains %USERPROFILE%\\.cargo\\bin\\*.exe (rustup, cargo, and cargo install targets). If concerned, exclude only %USERPROFILE%\\.cargo\\registry and %USERPROFILE%\\.cargo\\git."
+    },
+    {
+      "id": "rust_rustup",
+      "name": "rustup toolchains",
+      "path": "%USERPROFILE%\\.rustup",
+      "languages": ["rust"],
+      "rationale": "rustup toolchain cache — rustc + std lib + linked binaries.",
+      "containsExecutables": true,
+      "riskNote": "Contains toolchain .exe files (rustc, cargo, ld). These come from Rust's official signed distribution."
+    },
+    {
+      "id": "go_pkg",
+      "name": "Go module cache",
+      "path": "%USERPROFILE%\\go\\pkg",
+      "languages": ["go"],
+      "rationale": "Go module cache (pkg/mod).",
+      "containsExecutables": false,
+      "riskNote": "Low risk — module cache holds sources/zips."
+    },
+    {
+      "id": "go_bin",
+      "name": "Go installed binaries",
+      "path": "%USERPROFILE%\\go\\bin",
+      "languages": ["go"],
+      "rationale": "Binaries installed via go install.",
+      "containsExecutables": true,
+      "riskNote": "Contains user-built .exe files. Excluding means self-built Go tools skip RT-scan — acceptable for a dev's own builds."
+    },
+    {
+      "id": "java_gradle",
+      "name": "Gradle user home",
+      "path": "%USERPROFILE%\\.gradle",
+      "languages": ["java"],
+      "rationale": "Gradle dependency cache, wrapper distributions, daemon working data.",
+      "containsExecutables": true,
+      "riskNote": "Contains gradle wrapper distributions with launcher .exe. Signed by Gradle."
+    },
+    {
+      "id": "java_m2",
+      "name": "Maven local repository",
+      "path": "%USERPROFILE%\\.m2",
+      "languages": ["java"],
+      "rationale": "Maven local artifact repo. Heavy churn during Maven builds.",
+      "containsExecutables": false,
+      "riskNote": "Low risk — jars are read by JVM, not directly executed."
+    },
+    {
+      "id": "dotnet_nuget_packages",
+      "name": "NuGet global packages",
+      "path": "%USERPROFILE%\\.nuget\\packages",
+      "languages": ["dotnet"],
+      "rationale": "NuGet global-packages folder.",
+      "containsExecutables": true,
+      "riskNote": "Contains .dll and analyzer .exe files. Signed NuGet packages primarily."
+    },
+    {
+      "id": "dotnet_nuget_appdata_cache",
+      "name": "NuGet HTTP cache",
+      "path": "%LOCALAPPDATA%\\NuGet\\Cache",
+      "languages": ["dotnet"],
+      "rationale": "NuGet HTTP response cache.",
+      "containsExecutables": false,
+      "riskNote": "Low risk."
+    },
+    {
+      "id": "docker_local",
+      "name": "Docker Desktop local state",
+      "path": "%LOCALAPPDATA%\\Docker",
+      "languages": ["docker"],
+      "rationale": "Docker Desktop local state + WSL2 disk images. Massive I/O during docker build / pull.",
+      "containsExecutables": true,
+      "riskNote": "Contains WSL2 vhdx images and container filesystem layers with arbitrary executables. Excluding means Defender does NOT scan anything that runs inside containers via this path — but Defender can't reliably scan inside a Linux ext4 vhdx anyway, so this is honest."
+    },
+    {
+      "id": "wsl_ubuntu_vhdx",
+      "name": "WSL Ubuntu ext4 vhdx",
+      "path": "%LOCALAPPDATA%\\Packages\\CanonicalGroupLimited.Ubuntu*_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+      "pathIsGlob": true,
+      "languages": ["wsl"],
+      "rationale": "WSL2 root disk image. Defender scans on every WSL syscall touching it without exclusion.",
+      "containsExecutables": true,
+      "riskNote": "Windows-side Defender can't meaningfully scan inside an ext4 vhdx. Exclusion is more honest than pretending it protects the WSL guest."
+    },
+    {
+      "id": "vscode_extensions",
+      "name": "VS Code extensions",
+      "path": "%USERPROFILE%\\.vscode\\extensions",
+      "languages": ["vscode"],
+      "rationale": "VS Code extensions dir. Extension updates rewrite many small files.",
+      "containsExecutables": true,
+      "riskNote": "Contains extension binaries. Marketplace-signed but not audited."
+    },
+    {
+      "id": "cursor_appdata",
+      "name": "Cursor AppData",
+      "path": "%APPDATA%\\Cursor",
+      "languages": ["cursor"],
+      "rationale": "Cursor editor working data.",
+      "containsExecutables": true,
+      "riskNote": "Same profile as VS Code — extensions + workspace cache."
+    }
+  ]
+}

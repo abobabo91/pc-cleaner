@@ -1,0 +1,56 @@
+{
+  "_comment": "Driver files with documented crash / stability issues at specific versions. The drivers module reads the running .sys file version from HKLM:\\SYSTEM\\CurrentControlSet\\Services\\<name>\\ImagePath and compares to minGoodVersion. If below, the entry is flagged and cross-referenced against the last N crashdumps (crashdumps module) for confirmation. driverFile matches the .sys filename in known_drivers.json — keep names in sync.",
+  "_versionCompareRule": "Version strings are dot-separated; compare numerically field-by-field. Missing fields = 0. A driver at 2024.0.10.223 is BELOW 2024.10.230.600 because field 2 (0 vs 10) fails first.",
+  "entries": [
+    {
+      "driverFile": "rtwlane.sys",
+      "product": "Realtek Wi-Fi 5 (RTL8822CE / RTL8821CE)",
+      "minGoodVersion": "2024.10.230.600",
+      "description": "Realtek WLAN miniport driver. Versions at or below 2024.0.10.223 (May 2021) cause repeated DPC_WATCHDOG_VIOLATION and KERNEL_SECURITY_CHECK_FAILURE (GUARD_ICALL) on Ryzen 6000+ laptops. Root-caused on Lenovo Slim 7 ProX 14ARH7 (Ryzen 6900HS) 2026-07-04 — the machine had HP-vendored subsystem (103C) so Lenovo would not push updates. Fix: HP SoftPaq sp162860 (WLAN v2024.10.230.600, Jun 2025).",
+      "bugcheckCodes": ["0x133", "0x139"],
+      "affectedChips": ["RTL8822CE", "RTL8821CE"],
+      "workaround": "Install HP SoftPaq sp162860 (or newer). If unavailable, disable PCIe ASPM at the OS level (powercfg /setacvalueindex ... 0) AND zero all Realtek WLAN LPS registry flags — see wlan_lps_flags.json.",
+      "sourceFix": "knowledge_base/session_2026-07-04_lenovo_slim7prox.md#problem-1"
+    },
+    {
+      "driverFile": "amdacpbus.sys",
+      "product": "AMD Audio CoProcessor Bus (Ryzen 6000+)",
+      "minGoodVersion": null,
+      "description": "On Ryzen 6000+ laptops with combo WLAN/BT cards, this bus carries the Bluetooth host interface via the audio coprocessor. Crashes attributed to amdacpbus in !analyze -v are almost always downstream of a combo-card (Realtek WLAN or the BT firmware) problem, not audio. Do NOT propose reinstalling AMD chipset drivers as the fix — investigate the WLAN driver + BT firmware first.",
+      "bugcheckCodes": ["0x133", "0x139"],
+      "affectedChips": ["all-ryzen-6000-plus-combo"],
+      "workaround": "Treat as a symptom, not a cause. If crashdumps flag amdacpbus AND a Realtek WLAN driver is stale, fix the WLAN first and confirm crash pattern before touching audio.",
+      "sourceFix": "knowledge_base/session_2026-07-04_lenovo_slim7prox.md#problem-1"
+    },
+    {
+      "driverFile": "nvlddmkm.sys",
+      "product": "NVIDIA display driver (kernel mode)",
+      "minGoodVersion": null,
+      "description": "Placeholder — no specific bad-version pinned yet. Historically, several NVIDIA branches shipped with a TDR regression under multi-monitor / DirectX 12 workloads. If flagged in a dump, cross-check the running version against the current GRD / Studio branch from NVIDIA and roll forward if 2+ minor branches behind.",
+      "bugcheckCodes": ["0x133", "0x116"],
+      "affectedChips": ["all-nvidia-desktop", "all-nvidia-mobile"],
+      "workaround": "Update to current GRD or Studio branch. If the crash persists on the newest driver, try DDU-clean + install the previous LTS-style branch (often more stable for creator workloads).",
+      "verify": "Pin a specific known-bad NVIDIA version once a real incident is diagnosed"
+    },
+    {
+      "driverFile": "iaStorAC.sys",
+      "product": "Intel Rapid Storage Technology (RST) AHCI/NVMe driver",
+      "minGoodVersion": "17.11.0.1000",
+      "description": "Older Intel RST versions (roughly < 17.x) have documented DPC latency stalls that manifest as DPC_WATCHDOG_VIOLATION on NVMe systems. On modern (11th gen+) Intel platforms, Microsoft's inbox stornvme.sys is usually preferable unless the OEM specifically requires RST for RAID or Optane. Verify Intel's current RST minimum for the machine's PCH.",
+      "bugcheckCodes": ["0x133"],
+      "affectedChips": ["intel-pch-with-rst"],
+      "workaround": "If not using RAID/Optane, uninstall Intel RST and let Windows fall back to stornvme.sys. Otherwise update RST to the current PCH-appropriate version from Intel or the OEM.",
+      "verify": "Intel's current recommended RST version per PCH generation"
+    },
+    {
+      "driverFile": "amduw23g.sys",
+      "product": "AMD Radeon display driver (mobile Ryzen iGPU)",
+      "minGoodVersion": null,
+      "description": "TDR observed during background wake from Modern Standby on Ryzen 6900HS + Radeon 680M 2026-07-03 12:20. Hard reset, no BSOD, no dump. Kernel-Power 41 with BugCheckCode=0 + volmgr 161 is the signature. Not a bad driver version per se — an interaction between the AMD Radeon driver and Modern Standby (S0ix) resume. Fix is preventive: don't enter Modern Standby (see power module + modern_standby_overrides.json).",
+      "bugcheckCodes": ["0x0-no-dump", "0x117-if-caught"],
+      "affectedChips": ["radeon-680m", "radeon-780m"],
+      "workaround": "Set lid-close to Do nothing, hibernate after 30 min on DC. Avoid S0ix entirely on affected Ryzen mobile platforms.",
+      "sourceFix": "knowledge_base/session_2026-07-04_lenovo_slim7prox.md#problem-3"
+    }
+  ]
+}

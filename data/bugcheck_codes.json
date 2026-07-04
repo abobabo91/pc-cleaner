@@ -1,0 +1,128 @@
+{
+  "_comment": "Windows bug check (BSOD) code catalog. Used by the crashdumps module to translate a raw code from a minidump into a human-readable meaning and to rank likely causes. Fields: code (hex string, uppercase), name (SCREAMING_SNAKE Microsoft canonical name), meaning (short one-liner), commonCauses (ordered by frequency), hardwareVsDriver (hint for triage). See knowledge_base/session_2026-07-04_lenovo_slim7prox.md for a real-world triage example.",
+  "codes": [
+    {
+      "code": "0x133",
+      "name": "DPC_WATCHDOG_VIOLATION",
+      "meaning": "A DPC (Deferred Procedure Call) exceeded its time allowance. Almost always a driver spinning too long in kernel context.",
+      "commonCauses": [
+        "Storage driver stall (older Intel RST, SSD firmware bug, NVMe timeout)",
+        "Network driver stall (Realtek WLAN, especially with PCIe ASPM interactions)",
+        "GPU driver TDR that manifests as DPC timeout instead of 0x116"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0x139",
+      "name": "KERNEL_SECURITY_CHECK_FAILURE",
+      "meaning": "The kernel detected corruption of a critical data structure — commonly a control-flow guard (GUARD_ICALL) violation or a stack cookie mismatch.",
+      "commonCauses": [
+        "Driver bug corrupting a kernel structure (Realtek WLAN drivers historically frequent offenders)",
+        "Malware / rootkit tampering",
+        "Bad RAM (rare)"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0x7E",
+      "name": "SYSTEM_THREAD_EXCEPTION_NOT_HANDLED",
+      "meaning": "A system thread raised an exception the handler didn't catch.",
+      "commonCauses": [
+        "Faulting .sys named in parameters — usually a driver bug",
+        "Corrupt system file",
+        "Third-party AV kernel driver conflict"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0xA",
+      "name": "IRQL_NOT_LESS_OR_EQUAL",
+      "meaning": "Kernel-mode code accessed pageable memory (or invalid memory) at DISPATCH_LEVEL or higher.",
+      "commonCauses": [
+        "Bad driver dereferencing a null / freed pointer",
+        "Bad RAM",
+        "Overclock instability"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0x50",
+      "name": "PAGE_FAULT_IN_NONPAGED_AREA",
+      "meaning": "A page fault in memory that should not have been paged out.",
+      "commonCauses": [
+        "Bad RAM (classic symptom — run MemTest86)",
+        "Driver referencing freed memory",
+        "Corrupt page file / filesystem"
+      ],
+      "hardwareVsDriver": "mixed"
+    },
+    {
+      "code": "0x1E",
+      "name": "KMODE_EXCEPTION_NOT_HANDLED",
+      "meaning": "Kernel-mode program raised an exception the OS did not catch.",
+      "commonCauses": [
+        "Driver bug — check the module named in parameter 1",
+        "Corrupted system file",
+        "Hardware fault (rare)"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0x124",
+      "name": "WHEA_UNCORRECTABLE_ERROR",
+      "meaning": "Hardware raised an uncorrectable machine check exception (MCE). The CPU / chipset / RAM / bus reported it, not Windows.",
+      "commonCauses": [
+        "Failing CPU or CPU voltage instability (undervolt too aggressive)",
+        "Failing RAM (uncorrectable ECC or DIMM failure)",
+        "Overheating",
+        "Failing PSU under load",
+        "Bad PCIe device (rare — link training failure)"
+      ],
+      "hardwareVsDriver": "hardware"
+    },
+    {
+      "code": "0xC1",
+      "name": "SPECIAL_POOL_DETECTED_MEMORY_CORRUPTION",
+      "meaning": "Driver Verifier's special pool caught a driver writing outside its allocation.",
+      "commonCauses": [
+        "Driver bug — the faulting module is named",
+        "Only appears when Driver Verifier is active"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0x9F",
+      "name": "DRIVER_POWER_STATE_FAILURE",
+      "meaning": "A driver failed to complete a power state transition (sleep/resume/hibernate).",
+      "commonCauses": [
+        "Storage driver stall during sleep transition",
+        "USB device that didn't respond to selective suspend",
+        "GPU driver hang on resume",
+        "Modern Standby (S0ix) resume failures on Ryzen 6000+ platforms"
+      ],
+      "hardwareVsDriver": "driver"
+    },
+    {
+      "code": "0x116",
+      "name": "VIDEO_TDR_FAILURE",
+      "meaning": "The Video TDR (Timeout Detection and Recovery) fired and the recovery failed. GPU didn't respond in time.",
+      "commonCauses": [
+        "GPU driver bug",
+        "Overclock instability (GPU or memory)",
+        "GPU overheating / bad thermal paste"
+      ],
+      "hardwareVsDriver": "mixed"
+    },
+    {
+      "code": "0x1A",
+      "name": "MEMORY_MANAGEMENT",
+      "meaning": "The memory manager detected an invariant violation.",
+      "commonCauses": [
+        "Bad RAM (MemTest86)",
+        "Filesystem corruption on page file",
+        "Driver corrupting page tables"
+      ],
+      "hardwareVsDriver": "mixed"
+    }
+  ]
+}

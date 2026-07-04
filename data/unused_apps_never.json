@@ -1,0 +1,142 @@
+{
+  "_comment": "Apps that MUST NEVER be flagged as unused-and-removable, even if UserAssist + Prefetch show zero launches in 90+ days. These are background/utility/dependency apps whose value is not measured by user-launch counts. The unused-apps module reads this list before proposing any uninstall — anything matching gets filtered out silently (or logged as 'kept: dependency/security/etc.'). Match on display name substring (case-insensitive) against ARP (Add/Remove Programs) entries.",
+  "_matchRule": "Substring match against DisplayName in HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* + HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* + HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*. Match on Publisher too where noted.",
+  "categories": {
+    "security_av": {
+      "reason": "Security tools intentionally run silently. Zero user launches is normal, not a signal to remove.",
+      "patterns": [
+        "Windows Defender", "Microsoft Defender",
+        "Malwarebytes",
+        "Bitdefender",
+        "Norton", "Norton 360", "Norton Security",
+        "McAfee", "McAfee LiveSafe", "McAfee Total Protection",
+        "Kaspersky",
+        "ESET",
+        "Avast", "AVG",
+        "Sophos",
+        "Trend Micro",
+        "F-Secure",
+        "Webroot"
+      ]
+    },
+    "cloud_sync": {
+      "reason": "Sync clients run headless. User rarely opens the UI — but the daemon is doing its job.",
+      "patterns": [
+        "OneDrive",
+        "Dropbox",
+        "Google Drive",
+        "Google Drive File Stream",
+        "Backup and Sync from Google",
+        "Box",
+        "Box Drive",
+        "Box Sync",
+        "iCloud",
+        "iCloud for Windows",
+        "pCloud",
+        "MEGA",
+        "MEGAsync",
+        "Sync.com",
+        "Tresorit",
+        "NextCloud", "Nextcloud"
+      ]
+    },
+    "vpn": {
+      "reason": "VPN clients are typically launched via tray/toggle or run always-on. Low UserAssist activity is meaningless.",
+      "patterns": [
+        "OpenVPN",
+        "OpenVPN Connect",
+        "WireGuard",
+        "NordVPN",
+        "ExpressVPN",
+        "ProtonVPN",
+        "Mullvad VPN",
+        "Surfshark",
+        "TunnelBear",
+        "Private Internet Access",
+        "Cisco AnyConnect",
+        "Cisco Secure Client",
+        "Palo Alto GlobalProtect",
+        "FortiClient",
+        "Tailscale",
+        "ZeroTier"
+      ]
+    },
+    "password_manager": {
+      "reason": "Password managers are used via browser extension or system-tray — the desktop app itself may see zero launches.",
+      "patterns": [
+        "1Password",
+        "Bitwarden",
+        "KeePass",
+        "KeePassXC",
+        "LastPass",
+        "Dashlane",
+        "RoboForm",
+        "Enpass",
+        "NordPass"
+      ]
+    },
+    "backup": {
+      "reason": "Backup software runs on schedule. Zero UI launches is expected.",
+      "patterns": [
+        "Acronis",
+        "Acronis Cyber Protect",
+        "Acronis True Image",
+        "Macrium Reflect",
+        "Veeam",
+        "Duplicati",
+        "AOMEI Backupper",
+        "EaseUS Todo Backup",
+        "Paragon Backup"
+      ]
+    },
+    "cloud_dev_cli": {
+      "reason": "CLI tools launched via terminal — do not appear in UserAssist (Explorer-only surface).",
+      "patterns": [
+        "Google Cloud SDK", "gcloud",
+        "AWS Command Line Interface", "aws-cli",
+        "Azure CLI",
+        "DigitalOcean CLI", "doctl",
+        "kubectl",
+        "Terraform",
+        "HashiCorp Vault"
+      ]
+    },
+    "runtime_framework": {
+      "reason": "Frameworks and runtimes have no UI — apps depend on them. Removing breaks things silently.",
+      "patterns": [
+        "Microsoft .NET",
+        ".NET Runtime",
+        ".NET SDK",
+        ".NET Desktop Runtime",
+        "Microsoft Visual C++",
+        "Microsoft Visual C++ 20", "Microsoft Visual C++ 2015-2022",
+        "Java",
+        "Java Runtime Environment",
+        "OpenJDK",
+        "Java SE Development Kit",
+        "Python",
+        "Python Launcher",
+        "Node.js",
+        "PowerShell 7", "PowerShell (x64)",
+        "DirectX",
+        "OpenAL",
+        "Microsoft Edge WebView2 Runtime",
+        "Microsoft Edge Update"
+      ]
+    },
+    "system_essentials": {
+      "reason": "OS or driver components that end up in ARP but are essential.",
+      "patterns": [
+        "Realtek High Definition Audio Driver",
+        "Realtek Audio Console",
+        "Intel Chipset Device Software",
+        "Intel Management Engine Components",
+        "AMD Software",
+        "AMD Chipset Software",
+        "NVIDIA Graphics Driver",
+        "NVIDIA HD Audio Driver",
+        "Windows Software Development Kit"
+      ]
+    }
+  }
+}

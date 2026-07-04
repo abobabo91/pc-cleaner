@@ -1,0 +1,62 @@
+{
+  "_comment": "Common locations where users keep git repositories on Windows. The defender module scans these roots for immediate-child directories that contain a .git folder and offers them as candidate Defender exclusions — but adding the PARENT dir (not each repo individually) to avoid the exclusion list ballooning as the user adds repos. Fields: id, path (env vars), description, defaultExclude (bool — if true, propose without asking; if false, always ask), reason.",
+  "_askUser": "Always confirm with the user before adding any of these to Defender exclusions — a broad exclusion on Desktop or Documents removes real-time protection from a large portion of user files. Prefer excluding the tighter dev-tool subpaths in dev_cache_paths.json first, and only add these roots when the user explicitly wants to speed up building inside them.",
+  "roots": [
+    {
+      "id": "desktop_github",
+      "path": "%USERPROFILE%\\Desktop\\github",
+      "description": "Convention used by the current user and by some indie dev communities — repos parked directly under Desktop\\github.",
+      "defaultExclude": false,
+      "reason": "Broad exclusion of an active project root. Ask user."
+    },
+    {
+      "id": "documents_github",
+      "path": "%USERPROFILE%\\Documents\\GitHub",
+      "description": "GitHub Desktop's default clone location.",
+      "defaultExclude": false,
+      "reason": "GitHub Desktop convention."
+    },
+    {
+      "id": "source_repos",
+      "path": "%USERPROFILE%\\source\\repos",
+      "description": "Visual Studio's default 'Location' for new projects and Team Explorer clones.",
+      "defaultExclude": false,
+      "reason": "Visual Studio convention."
+    },
+    {
+      "id": "desktop_root",
+      "path": "%USERPROFILE%\\Desktop",
+      "description": "User's Desktop root — scan for direct children with .git.",
+      "defaultExclude": false,
+      "reason": "Way too broad to exclude wholesale — only enumerate for repo children."
+    },
+    {
+      "id": "documents_root",
+      "path": "%USERPROFILE%\\Documents",
+      "description": "User's Documents root — scan for direct children with .git.",
+      "defaultExclude": false,
+      "reason": "Way too broad to exclude wholesale — only enumerate for repo children."
+    },
+    {
+      "id": "c_dev",
+      "path": "C:\\dev",
+      "description": "Common short-path convention (avoids long-path issues on nested Node/Rust projects).",
+      "defaultExclude": false,
+      "reason": "If it exists, user chose this on purpose — likely benefits from exclusion. Ask."
+    },
+    {
+      "id": "c_code",
+      "path": "C:\\code",
+      "description": "Alt short-path convention.",
+      "defaultExclude": false,
+      "reason": "Same as C:\\dev."
+    },
+    {
+      "id": "c_src",
+      "path": "C:\\src",
+      "description": "Unix-habit short-path convention.",
+      "defaultExclude": false,
+      "reason": "Same as C:\\dev."
+    }
+  ]
+}

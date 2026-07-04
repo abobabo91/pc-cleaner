@@ -1,0 +1,64 @@
+{
+  "_comment": "Windows 11 fresh-install default taskbar pins and taskbar features. Used by the tray-taskbar module to distinguish 'OEM/Windows default pin the user never asked for' from 'user-pinned app the user actively uses'. Anything in this list that has zero launches per UserAssist is a strong candidate to unpin. Fields: id, name, kind (pin | taskbar_feature), reason, safeToUnpinDefault (bool).",
+  "_matchRule": "For pins, Win11 stores taskbar layout in %APPDATA%\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar\\ (shortcuts) + a per-user binary blob (FavoritesResolve or newer). Detection is unreliable across 24H2 builds — see backlog.md 'tray-taskbar pinned-app manipulation on Win11 24H2'.",
+  "_apiRisk": "Programmatic unpin on Windows 11 is not officially supported in PowerShell — the classic verb-invoke path (Shell.Application 'unpinfromtaskbar') was removed in 22H2. Fallback: modify the pinned-taskbar binary state and restart Explorer. Fragile — always snapshot the current binary state first.",
+  "default_pins": [
+    {
+      "id": "edge",
+      "name": "Microsoft Edge",
+      "kind": "pin",
+      "reason": "Ships pinned. Keep if Edge is the primary browser; unpin if the user runs Chrome / Firefox.",
+      "safeToUnpinDefault": false
+    },
+    {
+      "id": "store",
+      "name": "Microsoft Store",
+      "kind": "pin",
+      "reason": "Ships pinned. Most users open the Store once every few months.",
+      "safeToUnpinDefault": true
+    },
+    {
+      "id": "fileExplorer",
+      "name": "File Explorer",
+      "kind": "pin",
+      "reason": "Ships pinned. Essential — keep.",
+      "safeToUnpinDefault": false
+    },
+    {
+      "id": "widgets",
+      "name": "Widgets",
+      "kind": "taskbar_feature",
+      "reason": "Ships enabled. News/weather/stock widget bar. Registry: HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDa = 0 to hide.",
+      "safeToUnpinDefault": true
+    },
+    {
+      "id": "chat",
+      "name": "Chat (Microsoft Teams personal)",
+      "kind": "taskbar_feature",
+      "reason": "Ships enabled. Deprecated for consumer Teams. Registry: HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarMn = 0 to hide.",
+      "safeToUnpinDefault": true
+    },
+    {
+      "id": "copilot",
+      "name": "Copilot",
+      "kind": "taskbar_feature",
+      "reason": "Ships enabled on 23H2+ builds. Windows Copilot button. Registry: HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\ShowCopilotButton = 0.",
+      "safeToUnpinDefault": true,
+      "verify": "Registry key name — Microsoft has renamed the Copilot button toggle multiple times across builds"
+    },
+    {
+      "id": "search",
+      "name": "Search box",
+      "kind": "taskbar_feature",
+      "reason": "Ships as full search box. Registry: HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search\\SearchboxTaskbarMode. 0 = hidden, 1 = icon only, 2 = icon+label, 3 = full box. Recommend 1 (icon-only) for a cleaner bar without losing search.",
+      "safeToUnpinDefault": false
+    },
+    {
+      "id": "taskViewButton",
+      "name": "Task View",
+      "kind": "taskbar_feature",
+      "reason": "Virtual-desktop switcher button. Registry: HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\ShowTaskViewButton = 0 to hide.",
+      "safeToUnpinDefault": true
+    }
+  ]
+}

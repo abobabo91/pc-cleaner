@@ -1,0 +1,88 @@
+{
+  "_comment": "Per-installer-type silent uninstall flag catalog. The unused-apps apply script reads the UninstallString from ARP, detects the installer type (or falls back to `winget uninstall --silent`), and appends the correct silent flags. Fields: installerType, detectionHints (how to recognize the installer from UninstallString or file signature), silentFlags (string appended to the command), postUninstallDelayMs (some installers need a moment before the ARP entry disappears), notes.",
+  "_preferOrder": "1) If the package is installed via winget, use winget uninstall — it handles installer-type quirks itself. 2) If not, detect the installer type from UninstallString and apply flags below. 3) If undetectable, ask the user rather than run the raw UninstallString (which may be interactive).",
+  "_alwaysKillFirst": "Before uninstall, kill any process from the target's InstallLocation. See knowledge_base/session_2026-07-04_lenovo_slim7prox.md problem 5 — Comet browser uninstall returned exit 19 because the process was running; retry after kill succeeded silently.",
+  "installers": [
+    {
+      "installerType": "winget",
+      "detectionHints": ["Package present in `winget list --id <id>` output"],
+      "silentFlags": "--silent --accept-source-agreements",
+      "commandTemplate": "winget uninstall --id {id} --silent --accept-source-agreements",
+      "postUninstallDelayMs": 500,
+      "notes": "Preferred whenever the app is winget-known. Trust registry check post-uninstall, not the exit code."
+    },
+    {
+      "installerType": "msi",
+      "detectionHints": ["UninstallString starts with `MsiExec.exe /X` or `msiexec /x`", "UninstallString contains a GUID in braces"],
+      "silentFlags": "/qn /norestart",
+      "commandTemplate": "msiexec /x {productCode} /qn /norestart",
+      "postUninstallDelayMs": 1000,
+      "notes": "Extract the productCode {GUID} from the UninstallString. /qn = fully silent. Add REBOOT=ReallySuppress if a reboot prompt sneaks through."
+    },
+    {
+      "installerType": "innosetup",
+      "detectionHints": ["UninstallString points to unins000.exe or unins001.exe", "File signature: Inno Setup"],
+      "silentFlags": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
+      "commandTemplate": "\"{uninstallString}\" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
+      "postUninstallDelayMs": 1500,
+      "notes": "Very common for open-source Windows apps (Git for Windows, IrfanView, etc)."
+    },
+    {
+      "installerType": "nsis",
+      "detectionHints": ["UninstallString points to uninstall.exe / Uninstall.exe", "File signature: Nullsoft"],
+      "silentFlags": "/S",
+      "commandTemplate": "\"{uninstallString}\" /S",
+      "postUninstallDelayMs": 1500,
+      "notes": "Uppercase /S is critical — lowercase /s does nothing. Some NSIS scripts also want _?=<installDir> to unload the uninstaller itself; test if the ARP entry lingers."
+    },
+    {
+      "installerType": "installshield",
+      "detectionHints": ["UninstallString mentions InstallShield / setup.exe", "File signature: Flexera / InstallShield"],
+      "silentFlags": "/S /v/qn",
+      "commandTemplate": "\"{uninstallString}\" /S /v/qn",
+      "postUninstallDelayMs": 2000,
+      "notes": "Older InstallShield uses /uninst -s. Modern InstallShield wrappers around MSI take /S plus MSI-passthrough via /v.",
+      "verify": "Flag syntax varies wildly by IS version — spot-check with `/?` before trusting"
+    },
+    {
+      "installerType": "squirrel",
+      "detectionHints": ["UninstallString contains Update.exe", "InstallLocation has an app-<version> folder"],
+      "silentFlags": "--uninstall -s",
+      "commandTemplate": "\"{updateExe}\" --uninstall -s",
+      "postUninstallDelayMs": 2000,
+      "notes": "Used by Discord, Slack, GitHub Desktop, VS Code (system installer variant). Some Squirrel apps prefer just --uninstall (no -s)."
+    },
+    {
+      "installerType": "wix",
+      "detectionHints": ["UninstallString is an MSI GUID (WiX outputs MSI)", "InstallSource references a .wixpdb-flavored path"],
+      "silentFlags": "/qn /norestart",
+      "commandTemplate": "msiexec /x {productCode} /qn /norestart",
+      "postUninstallDelayMs": 1000,
+      "notes": "WiX-produced installers are MSIs — treat as msi."
+    },
+    {
+      "installerType": "tarma",
+      "detectionHints": ["UninstallString points to a Tarma InstallMate uninstaller (uninst.exe with Tarma banner)"],
+      "silentFlags": "/S",
+      "commandTemplate": "\"{uninstallString}\" /S",
+      "postUninstallDelayMs": 1500,
+      "notes": "Similar convention to NSIS."
+    },
+    {
+      "installerType": "chocolatey",
+      "detectionHints": ["Package present in `choco list --local-only` output"],
+      "silentFlags": "-y",
+      "commandTemplate": "choco uninstall {id} -y",
+      "postUninstallDelayMs": 500,
+      "notes": "Only usable if the user actually has choco installed. Prefer winget path when both are available."
+    },
+    {
+      "installerType": "appx_uwp",
+      "detectionHints": ["Package appears in `Get-AppxPackage`", "Not in ARP but in Store Apps list"],
+      "silentFlags": "(none — Remove-AppxPackage is silent by default)",
+      "commandTemplate": "Get-AppxPackage -Name {name} | Remove-AppxPackage",
+      "postUninstallDelayMs": 500,
+      "notes": "For all-user removal add -AllUsers (requires admin). Use `Remove-AppxProvisionedPackage -Online -PackageName <fullname>` to strip from OS image so it doesn't reinstall for new users."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "_comment": "Catalog of common Windows system-tray icons categorized by our recommendation. The tray-taskbar module reads current tray visibility from HKCU:\\Control Panel\\NotifyIconSettings (Win11 24H2+) or HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\NotifyIconSettings (older). Match on executablePath basename OR displayName substring (case-insensitive). Categories: keep_visible (essential system indicators — do not hide), hide_often (bloat / low-value nag icons), decide_per_user (personal preference — ask user).",
+  "_matchRule": "Some icons are lazily registered (only appear after their app has been open once). Enumerate the persistent registry list, then overlay whatever's currently in the running tray. If an icon is registered but the exe doesn't exist any more, propose cleanup of the stale entry.",
+  "keep_visible": [
+    { "id": "sysTrayVolume", "exeMatch": "SndVol.exe", "displayName": "Volume", "reason": "System audio control." },
+    { "id": "sysTrayBattery", "exeMatch": "explorer.exe", "displayName": "Power / Battery", "reason": "Battery status on laptops." },
+    { "id": "sysTrayNetwork", "exeMatch": "explorer.exe", "displayName": "Network", "reason": "Wi-Fi / Ethernet status." },
+    { "id": "sysTrayDefender", "exeMatch": "SecurityHealthSystray.exe", "displayName": "Windows Security", "reason": "Health status for Defender + firewall." },
+    { "id": "sysTrayWindowsUpdate", "exeMatch": "MoUsoCoreWorker.exe", "displayName": "Windows Update", "reason": "Only appears when a restart is pending — keep visible." }
+  ],
+  "hide_often": [
+    { "id": "cortana", "exeMatch": "SearchApp.exe", "displayName": "Cortana", "reason": "Cortana is deprecated for consumer use." },
+    { "id": "meetNow", "exeMatch": "ms-callto:", "displayName": "Meet Now", "reason": "Legacy Skype Meet Now button — rarely used." },
+    { "id": "xboxGameBarOverlay", "exeMatch": "GameBar.exe", "displayName": "Xbox Game Bar overlay", "reason": "Overlay tray hint — hide unless the user actively games." },
+    { "id": "onedriveSetupNag", "exeMatch": "OneDriveSetup.exe", "displayName": "OneDrive setup", "reason": "Setup-nag icon (NOT the sync client itself). See startup_disable_safe.json — the actual sync client OneDrive.exe is on the tripwire list and stays." }
+  ],
+  "decide_per_user": [
+    { "id": "nvidiaControlPanel", "exeMatch": "nvcplui.exe", "displayName": "NVIDIA Control Panel", "reason": "GPU tuning — keep if you tweak per-app settings; hide if you set-and-forget." },
+    { "id": "geforceExperience", "exeMatch": "NVIDIA GeForce Experience.exe", "displayName": "GeForce Experience", "reason": "Optimize + capture — hide if you never use ShadowPlay." },
+    { "id": "amdAdrenalin", "exeMatch": "RadeonSoftware.exe", "displayName": "AMD Adrenalin", "reason": "Radeon Software — same trade as NVIDIA CP." },
+    { "id": "realtekAudio", "exeMatch": "RtkNGUI64.exe", "displayName": "Realtek Audio Console", "reason": "Audio jack detection + EQ — most users never open it." },
+    { "id": "realtekAudioUniversal", "exeMatch": "RtkAudUService64.exe", "displayName": "Realtek Audio Universal", "reason": "UAD variant — same as above." },
+    { "id": "dropbox", "exeMatch": "Dropbox.exe", "displayName": "Dropbox", "reason": "Sync status — hide if you don't monitor uploads." },
+    { "id": "googleDrive", "exeMatch": "GoogleDriveFS.exe", "displayName": "Google Drive", "reason": "Sync status — hide if you don't monitor uploads." },
+    { "id": "slack", "exeMatch": "slack.exe", "displayName": "Slack", "reason": "Unread badge — many users want it, some don't." },
+    { "id": "zoom", "exeMatch": "Zoom.exe", "displayName": "Zoom", "reason": "Meeting reminders — hide if you launch Zoom via calendar links only." },
+    { "id": "discord", "exeMatch": "Discord.exe", "displayName": "Discord", "reason": "Mention badge — user preference." },
+    { "id": "steam", "exeMatch": "steam.exe", "displayName": "Steam", "reason": "Friends / notifications — user preference." },
+    { "id": "bitwarden", "exeMatch": "Bitwarden.exe", "displayName": "Bitwarden", "reason": "Password manager — usually keep for quick unlock, but tray isn't strictly required." },
+    { "id": "1password", "exeMatch": "1Password.exe", "displayName": "1Password", "reason": "Same as Bitwarden." },
+    { "id": "obs", "exeMatch": "obs64.exe", "displayName": "OBS Studio", "reason": "Recording indicator — keep if streaming." },
+    { "id": "lenovoVantage", "exeMatch": "LenovoVantage.exe", "displayName": "Lenovo Vantage", "reason": "OEM utility — most users can hide." },
+    { "id": "hpSupportAssistant", "exeMatch": "HPSA.exe", "displayName": "HP Support Assistant", "reason": "OEM utility — most users can hide." },
+    { "id": "dellSupportAssist", "exeMatch": "DellSupportAssist.exe", "displayName": "Dell SupportAssist", "reason": "OEM utility — most users can hide." }
+  ]
+}

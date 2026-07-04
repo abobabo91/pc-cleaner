@@ -1,0 +1,50 @@
+{
+  "_comment": "Third-party disk cleaners whose scheduled operations conflict with our storage module — if the user is already running CCleaner / Wise / BleachBit on a schedule, our sweeps will fight it for Prefetch entries + Delivery Optimization cache. If any listed installed-app / running-process / scheduled-task is detected, downgrade the storage module's default from 'auto' to 'warn_only' for the overlapping sources OR skip them entirely (per action). Analogous schema to explorer_conflicts.json.",
+  "_matchRule": "OR across the three signals (installedAppNames / runningProcesses / scheduledTasks). Case-insensitive substring match.",
+  "conflicts": [
+    {
+      "toolName": "CCleaner",
+      "installedAppNames": ["CCleaner", "CCleaner Free", "CCleaner Professional"],
+      "runningProcesses": ["CCleaner64.exe", "CCleaner.exe"],
+      "scheduledTasks": ["CCleaner Update", "CCleaner Skip UAC", "CCleanerSkipUAC", "CCleaner"],
+      "action": "skip_prefetch_cleanup_and_delivery_optimization",
+      "reason": "CCleaner Smart Cleaning sweeps Prefetch + Temp on schedule. Overlapping cleanup wastes I/O and may race with theirs mid-run."
+    },
+    {
+      "toolName": "Wise Disk Cleaner",
+      "installedAppNames": ["Wise Disk Cleaner"],
+      "runningProcesses": ["WiseDiskCleaner.exe", "WiseCleaner.exe"],
+      "scheduledTasks": ["Wise Disk Cleaner", "WiseDiskCleaner"],
+      "action": "skip_prefetch_cleanup_and_delivery_optimization",
+      "reason": "Wise Disk Cleaner's scheduled sweep covers the same targets as our storage module."
+    },
+    {
+      "toolName": "BleachBit",
+      "installedAppNames": ["BleachBit"],
+      "runningProcesses": ["bleachbit.exe"],
+      "scheduledTasks": ["BleachBit"],
+      "action": "warn_only",
+      "reason": "BleachBit is typically run interactively, not scheduled. Warn the user we'll also clean, but proceed."
+    },
+    {
+      "toolName": "Advanced SystemCare",
+      "installedAppNames": ["Advanced SystemCare", "IObit Advanced SystemCare"],
+      "runningProcesses": ["ASCTray.exe", "ASC.exe", "AdvancedSystemCare.exe"],
+      "scheduledTasks": ["Advanced SystemCare", "IObit"],
+      "action": "skip_prefetch_cleanup_and_delivery_optimization",
+      "reason": "Advanced SystemCare hooks into Prefetch cleanup and runs periodically."
+    },
+    {
+      "toolName": "Glary Utilities",
+      "installedAppNames": ["Glary Utilities"],
+      "runningProcesses": ["Integrator.exe", "GlaryUtilities.exe"],
+      "scheduledTasks": ["Glary Utilities", "GlaryUtilities"],
+      "action": "skip_prefetch_cleanup_and_delivery_optimization",
+      "reason": "Glary's 1-Click Maintenance touches the same targets."
+    }
+  ],
+  "defaultActionOnDetection": {
+    "skip_prefetch_cleanup_and_delivery_optimization": "Do not touch %WINDIR%\\Prefetch or the Delivery Optimization cache. Log the skip. The other storage sources (%TEMP%, Windows.old, DISM cleanup) still run.",
+    "warn_only": "Print a one-line notice to the user that another cleaner is installed and may re-clean the same paths. Proceed anyway."
+  }
+}

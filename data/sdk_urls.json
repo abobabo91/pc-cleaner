@@ -1,0 +1,40 @@
+{
+  "_comment": "Windows SDK installer URL catalog for the crashdumps module. We only need the Debugging Tools for Windows (WinDbg / kd) — installed as a component of the full SDK. Microsoft's fwlink IDs rot; verify monthly. verifyMonthly: true means the diagnose step should print a reminder when verifiedDate is > 30 days old. Try primary URL first; on non-200 or failed install, fall back through the fallback array in order.",
+  "_installComponent": "OptionId.WindowsDesktopDebuggers is the only component we need — a ~200MB install versus a multi-GB full SDK.",
+  "verifyMonthly": true,
+  "refreshInstructions": "https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/ — pull the current Windows SDK download link from the 'Debugging Tools for Windows' page. Also check winget: winget search Microsoft.WindowsSDK.",
+  "primary": {
+    "url": "https://go.microsoft.com/fwlink/?linkid=2286561",
+    "sdkVersion": "10.0.26100",
+    "windowsVersion": "Windows 11 (24H2)",
+    "verifiedDate": "2026-07-04",
+    "verifiedSource": "knowledge_base/session_2026-07-04_lenovo_slim7prox.md — installed and used successfully to !analyze -v the RTL8822CE minidumps",
+    "silentInstallArgs": "/features OptionId.WindowsDesktopDebuggers /quiet /norestart /ceip off",
+    "installedDebuggerPath": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\",
+    "symbolCacheHint": "Set _NT_SYMBOL_PATH=srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols before running !analyze -v."
+  },
+  "fallback": [
+    {
+      "method": "winget",
+      "command": "winget install Microsoft.WindowsSDK.10.0.26100 --silent --accept-package-agreements --accept-source-agreements",
+      "note": "winget silently installs the same package. Slower than the fwlink direct download but survives fwlink rot.",
+      "verify": "Package ID — may become Microsoft.WindowsSDK.10.0.<newer> in the future"
+    },
+    {
+      "method": "winget-generic",
+      "command": "winget install --id Microsoft.WindowsSDK --silent --accept-package-agreements --accept-source-agreements",
+      "note": "Newest available WindowsSDK regardless of version — use if the pinned version ID is retired."
+    },
+    {
+      "method": "chocolatey",
+      "command": "choco install windows-sdk-10-version-2004-windbg -y",
+      "note": "Chocolatey has an older standalone WinDbg package. Last resort; verify current version before use.",
+      "verify": "Choco package name — the version-2004 suffix is stale"
+    }
+  ],
+  "postInstallVerify": {
+    "checkPath": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe",
+    "checkCommand": "cdb -version",
+    "expectedContains": "cdb: Version"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "_comment": "Per-role suggested-app bundles as winget package IDs. The ninite-personalized module detects the user's role (see role_signals.json), reads which apps are already installed, and outputs a suggested `winget install --id X` list for each bundle that's active. NEVER auto-installs — the module always prints the copy-paste command for the user to run explicitly. Fields per bundle: role, description, apps (array of { id, name, category, optional (bool) }).",
+  "_alwaysInclude": "The 'always_useful' bundle is offered regardless of detected role. Skip individual entries the user already has.",
+  "_wingetIdVerify": "winget IDs occasionally change (publisher renames, new suffixes). If an install command fails with 'no package found', run `winget search <name>` at runtime to resolve the current ID.",
+  "bundles": [
+    {
+      "role": "dev",
+      "description": "General-purpose software development.",
+      "apps": [
+        { "id": "Git.Git", "name": "Git", "category": "vcs" },
+        { "id": "GitHub.cli", "name": "GitHub CLI", "category": "vcs" },
+        { "id": "Microsoft.VisualStudioCode", "name": "Visual Studio Code", "category": "editor" },
+        { "id": "Microsoft.WindowsTerminal", "name": "Windows Terminal", "category": "terminal" },
+        { "id": "Python.Python.3.12", "name": "Python 3.12", "category": "runtime", "verify": "Version pin — bump to newest active branch periodically" },
+        { "id": "OpenJS.NodeJS.LTS", "name": "Node.js LTS", "category": "runtime" },
+        { "id": "Docker.DockerDesktop", "name": "Docker Desktop", "category": "container", "optional": true },
+        { "id": "Postman.Postman", "name": "Postman", "category": "api-client", "optional": true },
+        { "id": "JetBrains.Toolbox", "name": "JetBrains Toolbox", "category": "editor", "optional": true },
+        { "id": "GnuWin32.Make", "name": "GNU Make", "category": "build" },
+        { "id": "Neovim.Neovim", "name": "Neovim", "category": "editor", "optional": true }
+      ]
+    },
+    {
+      "role": "creative",
+      "description": "Photo / video / audio / 3D creation.",
+      "apps": [
+        { "id": "Adobe.Acrobat.Reader.64-bit", "name": "Adobe Acrobat Reader", "category": "pdf" },
+        { "id": "GIMP.GIMP", "name": "GIMP", "category": "image" },
+        { "id": "BlenderFoundation.Blender", "name": "Blender", "category": "3d" },
+        { "id": "DarkTable.DarkTable", "name": "darktable", "category": "photo-raw", "verify": "Publisher casing — sometimes shows as darktable.darktable" },
+        { "id": "Audacity.Audacity", "name": "Audacity", "category": "audio" },
+        { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "category": "capture" },
+        { "id": "VideoLAN.VLC", "name": "VLC media player", "category": "playback" }
+      ]
+    },
+    {
+      "role": "gamer",
+      "description": "Game launchers + overlays + capture.",
+      "apps": [
+        { "id": "Valve.Steam", "name": "Steam", "category": "launcher" },
+        { "id": "EpicGames.EpicGamesLauncher", "name": "Epic Games Launcher", "category": "launcher", "optional": true },
+        { "id": "Discord.Discord", "name": "Discord", "category": "chat" },
+        { "id": "OBSProject.OBSStudio", "name": "OBS Studio", "category": "capture", "optional": true },
+        { "id": "Nvidia.GeForceExperience", "name": "GeForce Experience", "category": "gpu-tools", "optional": true, "verify": "NVIDIA is moving toward the NVIDIA App as the successor" },
+        { "id": "TechPowerUp.MSIAfterburner", "name": "MSI Afterburner", "category": "monitoring", "optional": true }
+      ]
+    },
+    {
+      "role": "office",
+      "description": "Documents, meetings, storage, PDFs, passwords.",
+      "apps": [
+        { "id": "Microsoft.Office", "name": "Microsoft Office", "category": "productivity", "optional": true, "verify": "May be Microsoft.Office or Microsoft365.Apps depending on the account tier" },
+        { "id": "Notion.Notion", "name": "Notion", "category": "notes", "optional": true },
+        { "id": "Zoom.Zoom", "name": "Zoom", "category": "meetings" },
+        { "id": "Google.GoogleDrive", "name": "Google Drive", "category": "storage", "optional": true },
+        { "id": "Adobe.Acrobat.Reader.64-bit", "name": "Adobe Acrobat Reader", "category": "pdf" },
+        { "id": "Bitwarden.Bitwarden", "name": "Bitwarden", "category": "passwords", "optional": true },
+        { "id": "KeePassXCTeam.KeePassXC", "name": "KeePassXC", "category": "passwords", "optional": true }
+      ]
+    },
+    {
+      "role": "student",
+      "description": "Study, reference management, meetings.",
+      "apps": [
+        { "id": "Zoom.Zoom", "name": "Zoom", "category": "meetings" },
+        { "id": "Zotero.Zotero", "name": "Zotero", "category": "reference-management" },
+        { "id": "Notion.Notion", "name": "Notion", "category": "notes" },
+        { "id": "Anki.Anki", "name": "Anki", "category": "study" },
+        { "id": "TheDocumentFoundation.LibreOffice", "name": "LibreOffice", "category": "productivity", "verify": "Publisher path — sometimes appears as LibreOffice.LibreOffice" }
+      ]
+    },
+    {
+      "role": "always_useful",
+      "description": "Universal quality-of-life utilities — offer to every user regardless of role.",
+      "apps": [
+        { "id": "7zip.7zip", "name": "7-Zip", "category": "archiver" },
+        { "id": "VideoLAN.VLC", "name": "VLC media player", "category": "playback" },
+        { "id": "Mozilla.Firefox", "name": "Mozilla Firefox", "category": "browser", "optional": true },
+        { "id": "Bitwarden.Bitwarden", "name": "Bitwarden", "category": "passwords", "optional": true },
+        { "id": "Microsoft.PowerToys", "name": "Microsoft PowerToys", "category": "utility" },
+        { "id": "Microsoft.PowerShell", "name": "PowerShell 7", "category": "shell" },
+        { "id": "voidtools.Everything", "name": "Everything (search)", "category": "search" }
+      ]
+    }
+  ]
+}

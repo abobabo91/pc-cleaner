@@ -1,0 +1,92 @@
+{
+  "_comment": "Per-OEM driver / SoftPaq catalog access patterns. Used by the drivers module to resolve a device's subsystem-vendor OEM to a downloadable installer. Fields: oem (matches oem_pci_vendors.json vendor name), catalogType (softpaq|per-machine|per-chip|driver-portal), urlPattern (templated — {id}, {mt}, {tag} etc. are runtime-filled), machineIdRequired (bool — some OEMs gate downloads behind machine serial / machine-type), notes.",
+  "_crossVendorNote": "HP SoftPaqs are historically the most cross-vendor-friendly for Realtek WLAN/BT chipsets — a Lenovo/HP-vendored Realtek card (subsystem 103C) can only get current drivers via HP's catalog even on a Lenovo chassis. See knowledge_base/session_2026-07-04_lenovo_slim7prox.md problem 1.",
+  "sources": [
+    {
+      "oem": "HP",
+      "id": "hp",
+      "catalogType": "softpaq",
+      "urlPattern": "https://ftp.hp.com/pub/softpaq/sp{lower}-{upper}/sp{id}.exe",
+      "urlPatternNotes": "SoftPaqs are numbered globally, hosted in bucket ranges of 500. For sp162860: lower=162501, upper=163000 → https://ftp.hp.com/pub/softpaq/sp162501-163000/sp162860.exe",
+      "catalogIndex": "https://support.hp.com/us-en/drivers",
+      "machineIdRequired": false,
+      "crossVendorFriendly": true,
+      "notes": "Most cross-vendor-friendly SoftPaqs for Realtek WLAN/BT + Synaptics. Numbering rolls forward monotonically. Verify actual sp id via product page, not by guessing the number.",
+      "verify": "URL pattern for bucket boundaries — HP occasionally shifts bucket sizes"
+    },
+    {
+      "oem": "Lenovo",
+      "id": "lenovo",
+      "catalogType": "per-machine",
+      "urlPattern": "https://pcsupport.lenovo.com/us/en/products/laptops-and-netbooks/{series}/{model}/{mt}/downloads",
+      "urlPatternNotes": "Machine Type (MT, first 4 chars of the serial's model code, e.g. 82V2 for Slim 7 ProX 14ARH7) is required. Newer System Update-driven catalog at https://download.lenovo.com/pccbbs/mobiles/{catalog_id}.txt",
+      "catalogIndex": "https://pcsupport.lenovo.com/us/en",
+      "machineIdRequired": true,
+      "crossVendorFriendly": false,
+      "notes": "Won't ship a driver for a subsystem vendor that isn't Lenovo (e.g. HP-vendored Realtek card in a Lenovo chassis gets nothing). Check subsystem-vendor OEM first, then fall back to Lenovo only if it matches.",
+      "verify": "Machine Type resolution — sometimes MT is 4-char, sometimes 5"
+    },
+    {
+      "oem": "Dell",
+      "id": "dell",
+      "catalogType": "per-machine",
+      "urlPattern": "https://www.dell.com/support/home/en-us/product-support/servicetag/{serviceTag}/drivers",
+      "urlPatternNotes": "Service Tag (7-char, from BIOS) is the key. Also accepts Express Service Code. Direct downloads under downloads.dell.com/FOLDER{id}M/1/{driver}.EXE — folder path not stable long-term.",
+      "catalogIndex": "https://www.dell.com/support/home",
+      "machineIdRequired": true,
+      "crossVendorFriendly": false,
+      "notes": "Signs many of its own drivers (repackaged Realtek/Intel etc.). Service Tag lookup returns a manifest JSON that lists direct .exe URLs."
+    },
+    {
+      "oem": "ASUS",
+      "id": "asus",
+      "catalogType": "per-machine",
+      "urlPattern": "https://www.asus.com/support/download-center/",
+      "machineIdRequired": true,
+      "crossVendorFriendly": false,
+      "notes": "Model-family driven. Bundles most driver installers behind an interactive picker; no clean static URL pattern."
+    },
+    {
+      "oem": "Realtek",
+      "id": "realtek_direct",
+      "catalogType": "per-chip",
+      "urlPattern": "https://www.realtek.com/en/component/zoo/category/",
+      "machineIdRequired": false,
+      "crossVendorFriendly": true,
+      "notes": "Realtek's public download site publishes only a limited/older WLAN + audio driver set. For a current Realtek WLAN/BT driver, prefer an HP SoftPaq. Realtek Audio (Realtek Audio Console / UAD) is the exception — Realtek publishes current builds directly."
+    },
+    {
+      "oem": "Intel",
+      "id": "intel",
+      "catalogType": "driver-portal",
+      "urlPattern": "https://www.intel.com/content/www/us/en/download/{productId}/{tag}.html",
+      "urlPatternNotes": "Intel's Download Center uses a productId per driver family. Intel Driver & Support Assistant (DSA) resolves it automatically.",
+      "catalogIndex": "https://www.intel.com/content/www/us/en/download-center/home.html",
+      "machineIdRequired": false,
+      "crossVendorFriendly": true,
+      "notes": "Intel WLAN (AX2xx), Bluetooth, Chipset, iGPU — all resolve cleanly. DSA is the quickest programmatic path. Windows Update also stays current on Intel WLAN, unlike Realtek."
+    },
+    {
+      "oem": "NVIDIA",
+      "id": "nvidia",
+      "catalogType": "driver-portal",
+      "urlPattern": "https://www.nvidia.com/Download/index.aspx",
+      "urlPatternNotes": "GPU model + OS + branch (Game Ready / Studio) form the query. GeForce Experience app automates it. NVIDIA also publishes an official JSON manifest at https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php.",
+      "catalogIndex": "https://www.nvidia.com/Download/index.aspx",
+      "machineIdRequired": false,
+      "crossVendorFriendly": true,
+      "notes": "Laptop drivers (mobile GPUs) are OEM-scoped historically, but NVIDIA has unified this — modern .exe installers work across OEMs on GeForce mobile."
+    },
+    {
+      "oem": "AMD",
+      "id": "amd",
+      "catalogType": "driver-portal",
+      "urlPattern": "https://www.amd.com/en/support",
+      "urlPatternNotes": "AMD Adrenalin auto-detect app resolves the exact package. Manual selector by product family + model.",
+      "catalogIndex": "https://www.amd.com/en/support",
+      "machineIdRequired": false,
+      "crossVendorFriendly": true,
+      "notes": "AMD publishes both consumer Adrenalin and OEM-branded (pro / laptop) drivers. Laptop iGPU drivers may lag OEM builds — always check the chassis OEM's catalog first for mobile Radeon."
+    }
+  ]
+}

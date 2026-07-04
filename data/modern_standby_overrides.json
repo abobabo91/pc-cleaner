@@ -1,0 +1,67 @@
+{
+  "_comment": "Best-effort catalog of laptop mfg+model combos where the OEM left an S3 (traditional sleep) opt-in in the BIOS, letting the user avoid Modern Standby (S0ix) entirely. The power module normally branches off `powercfg /a` output — if S3 is unavailable at runtime, it defaults to 'hibernate on timer, never sleep' (see knowledge_base/session_2026-07-04_lenovo_slim7prox.md problem 3 for the Ryzen 6000 wake-freeze pattern). This file is a hint layer: if the machine matches, the module can suggest 'flip the BIOS setting <X> to enable Windows S3 and use traditional sleep instead of hibernate-on-timer.' ALWAYS re-check `powercfg /a` after the user reboots — this list is not authoritative.",
+  "_bestEffort": "Small and volatile. OEMs remove S3 opt-ins across BIOS revisions without announcement. Match is a hint, not a guarantee. Always defer to `powercfg /a` runtime output before applying any change.",
+  "_matchRule": "mfg matches Win32_ComputerSystem.Manufacturer exactly (case-insensitive). modelPattern is a regex against Win32_ComputerSystem.Model. Both must match for an entry to apply.",
+  "entries": [
+    {
+      "mfg": "LENOVO",
+      "modelPattern": "(?i)IdeaPad\\s*(3|5)\\s*15ARE05",
+      "s3AvailableViaBios": true,
+      "biosSettingName": "Sleep State — Windows 10 / Linux",
+      "biosMenuPath": "Setup > Configuration > Sleep State",
+      "notes": "Ryzen 4000-era Ideapad. BIOS lets you flip between Windows 10 (S0ix / Modern Standby) and Linux (S3). Switching to Linux gives you S3 in Windows too."
+    },
+    {
+      "mfg": "LENOVO",
+      "modelPattern": "(?i)IdeaPad\\s*(3|5)\\s*(14|15|17)ARE05",
+      "s3AvailableViaBios": true,
+      "biosSettingName": "Sleep State — Windows 10 / Linux",
+      "biosMenuPath": "Setup > Configuration > Sleep State",
+      "notes": "Ryzen 4000 Ideapad family."
+    },
+    {
+      "mfg": "LENOVO",
+      "modelPattern": "(?i)IdeaPad\\s*(3|5)\\s*(14|15|17)ALC05",
+      "s3AvailableViaBios": true,
+      "biosSettingName": "Sleep State — Windows 10 / Linux",
+      "biosMenuPath": "Setup > Configuration > Sleep State",
+      "notes": "Ryzen 5000 Ideapad refresh — many SKUs kept the toggle.",
+      "verify": "Some BIOS revisions removed the toggle in updates"
+    },
+    {
+      "mfg": "LENOVO",
+      "modelPattern": "(?i)ThinkPad\\s*(T|E|L|X)1?\\d\\s*(Gen\\s*[1-3]|.*AMD)",
+      "s3AvailableViaBios": true,
+      "biosSettingName": "Sleep State — Windows 10 / Linux",
+      "biosMenuPath": "Setup > Config > Power > Sleep State",
+      "notes": "Ryzen ThinkPads through gen 3 broadly retained the S3 toggle. Later gens (4+) increasingly locked to Modern Standby only.",
+      "verify": "Individual Gen4+ SKUs vary"
+    },
+    {
+      "mfg": "HP",
+      "modelPattern": "(?i)(ProBook|EliteBook)\\s*.*(G6|G7|G8).*",
+      "s3AvailableViaBios": true,
+      "biosSettingName": "S3 Sleep",
+      "biosMenuPath": "Advanced > Built-In Device Options > S3 Sleep",
+      "notes": "HP business laptops from the G6-G8 range often kept S3 selectable via BIOS. G9+ mostly Modern Standby only.",
+      "verify": "BIOS revision matters — HP occasionally removes on major updates"
+    },
+    {
+      "mfg": "Dell Inc.",
+      "modelPattern": "(?i)Latitude\\s*(5|7)\\d{3}\\s*(AMD)?",
+      "s3AvailableViaBios": true,
+      "biosSettingName": "Block Sleep",
+      "biosMenuPath": "Power Management > Block Sleep — off; then Sleep = S3",
+      "notes": "Dell Latitude AMD SKUs (Ryzen 4000/5000-era) had S3 as an alternative to Modern Standby via BIOS. Newer Intel Latitude 14th-gen removed the toggle.",
+      "verify": "Dell BIOS labeling varies by generation"
+    },
+    {
+      "mfg": "ASUS",
+      "modelPattern": "(?i)(ZenBook|VivoBook).*(M14|M15|UM|UX).*",
+      "s3AvailableViaBios": false,
+      "biosSettingName": null,
+      "notes": "ASUS mostly does NOT expose an S3 toggle on modern AMD/Intel laptops. Included here to explicitly flag: don't tell the user to look for a BIOS setting that isn't there.",
+      "verify": "Some pre-2022 SKUs did have it"
+    }
+  ]
+}
