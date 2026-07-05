@@ -1,134 +1,159 @@
 # pc-cleaner
 
-Claude Code skill that audits, categorizes, and cleans a Windows PC. Public / shareable. Windows 11 focus.
+**Make your Windows 11 PC faster and cleaner. Ask like a friend, apply safely.**
 
-## What it does
+Runs inside Claude Code, asks you plain-English questions about what you actually use, and cleans out the stuff you don't. Everything it changes gets saved as a "revert" file so you can undo any step.
 
-Runs a machine-aware audit of everything that slows down a Windows PC, categorizes each finding as **KEEP** / **KEEP-FOR-YOU** / **DISABLE-SAFE** / **MAYBE**, applies the safe cleanups automatically, asks you targeted questions only for the genuinely ambiguous ones, and produces a full revert path for every action.
+---
 
-## Important: launch Claude Code as Administrator first
+## What it does for you
 
-pc-cleaner makes changes that require administrator permission. Before running `/pc-cleaner`, launch Claude Code (or the terminal you use to invoke it) as Administrator — otherwise the tool will detect the missing elevation, stop, and tell you to relaunch.
+Removes the bloat that comes preinstalled with Windows — the Xbox apps, Cortana, Weather, News, Feedback Hub, Solitaire, Copilot ads in your Start menu — but **only the ones you actually don't use**. It asks you first, in plain English.
 
-On Windows 11:
-1. Close Claude Code if it's already running.
-2. Right-click the Start button → **Terminal (Admin)** (or press Win+X → A). Click Yes on the UAC prompt.
-3. Launch Claude Code from that admin terminal (`claude` or however you launch it).
-4. Now type `/pc-cleaner`.
+Frees up disk space by deleting temporary files, browser caches, Discord/Slack/Zoom/VS Code caches. On a typical machine that's 500 MB to 5 GB back.
 
-Running Claude Code as admin means the whole pc-cleaner run happens in one elevated session — you see one UAC prompt at Step 2 and never again. If you don't do this, individual module applies will trigger UAC prompts that may land off-screen or behind other windows, causing them to fail silently.
+Turns off Windows tracking, ads, activity history, and Bing search suggestions in the Start menu.
 
-## How you use it
+Disables the apps that auto-start every time you turn on your computer but you never use.
 
-```
-> /pc-cleaner
-```
+Fixes Windows 11's most-complained-about annoyances if you want (Widgets button, Copilot button, right-click menu). But it doesn't force any of these — it asks first.
 
-in Claude Code (Windows). By default this runs the **CORE** modules — universally beneficial, low-risk cleanups that make sense on any Windows 11 machine.
+For laptops with a known Bluetooth or crash problem, it can find the actual fix for your specific chip.
 
-To include one or more optional modules:
+**Everything is asked as "do you use this?", not "do you know what SMB is?".** If you don't know, there's always an "I'm not sure" option and the tool figures it out for you.
 
-```
-> /pc-cleaner --include power,drivers,defender
-```
+## For non-technical users — how to actually run it
 
-To run just one module:
+You need two things installed once:
+1. **Claude Code** — the AI coding assistant. [Download here](https://www.anthropic.com/claude-code) and sign in.
+2. **The pc-cleaner skill** — this project. Two commands to install (copy-paste into any terminal):
 
 ```
-> /pc-cleaner services
+git clone https://github.com/abobabo91/pc-cleaner "$env:USERPROFILE\pc-cleaner"
+Copy-Item -Recurse "$env:USERPROFILE\pc-cleaner\skill" "$env:USERPROFILE\.claude\skills\pc-cleaner"
 ```
 
-To undo a previous run:
+Once installed, every time you want to clean your PC:
 
-```
-> /pc-cleaner revert 2026-07-04T18-30-05
-```
+1. **Close Claude Code** if it's already open.
+2. **Right-click the Windows Start button** → click **Terminal (Admin)**. Click **Yes** on the security prompt.
+3. In that admin Terminal, type `claude` and press Enter to launch Claude Code.
+4. Type `/pc-cleaner` and press Enter.
 
-## Modules
+That's it. The tool will ask you about 5-10 questions total, all in plain English. Say what you use, say what you don't. It applies everything automatically and shows you a before/after summary at the end.
 
-### CORE — runs by default
+**It takes about 5 minutes.** You can stop at any time — nothing gets applied until you agree.
 
-| Module | Purpose |
-|---|---|
-| `profile` | Detect machine: mfg/model, CPU (vendor + gen), GPUs, WLAN chip + subsystem, battery, OS build, sleep states. Everything else branches off this. |
-| `benchmark` | Boot time, running services, RAM baseline, autostart count. Runs at start and end; produces before/after diff. |
-| `services` | Audit 300+ Windows services. Disable safe bloat, ask about MAYBEs (batched), enable useful ones (ssh-agent). Curated tripwire list refuses risky disables. |
-| `startup` | Registry Run keys (all hives) + Startup folders + user Task Scheduler entries. Kill autostart bloat. Preserves your actively-used app launchers. |
-| `bloat` | winget uninstall of Xbox, Cortana, Copilot, News, Weather, LinkedIn, People, Skype, Feedback Hub, Get Started, Tips, Solitaire. Ask before removing Photos, Groove, or anything that has data. |
-| `privacy` | Telemetry off, ad ID off, activity history off, targeted ads, Explorer ads (SubscribedContent), Edge tracking prevention, Copilot key off, search web off. |
-| `explorer` | Win11 right-click classic menu, Widgets remove, Search box → icon only, taskbar align left, file extensions visible. Non-destructive UI de-annoyance. |
-| `storage` | %TEMP% + LocalAppData\Temp cleanup, Windows.old, DISM /cleanup-image /startcomponentcleanup /resetbase, Storage Sense on with sensible defaults, Delivery Optimization cache purge. |
+## What if something goes wrong?
 
-### OPTIONAL — opt-in per module
+Every change gets saved to a folder on your Desktop called `pc-cleaner-snapshots`. Each cleanup run is its own subfolder with a `revert.ps1` script inside. If you don't like a change:
 
-| Module | Purpose | When to include |
-|---|---|---|
-| `power` | PCIe ASPM off, hibernate config, lid = do nothing, WLAN driver LPS off. Fixes Ryzen 6000+ Modern Standby crashes and combo-card BT range. | Laptop, or you've had unexplained sleep-related crashes. |
-| `network` | Remove SMBv1 (default: yes), DoH config, optional DNS override (Cloudflare / Quad9), disable NetBIOS over TCP. | You care about network security / privacy tuning. |
-| `drivers` | Detect stale drivers, OEM-vs-subsystem-vendor mismatch (e.g. Lenovo laptop with HP-vendored WiFi card). Find matching SoftPaqs from HP / Dell / Lenovo / Realtek. | You suspect a driver problem, or run this yearly to catch stale WiFi/BT/GPU. |
-| `defender` | Add path exclusions for dev toolchains (WSL2 vhdx, node_modules, .git, pnpm-store, cargo, gradle, etc.). RTP stays on. | You're a developer and Defender is slowing your builds. |
-| `crashdumps` | Install Windows SDK Debuggers (~200MB), cache MS symbols, `!analyze -v` the last N minidumps, rank failing drivers. | You have or recently had BSODs. |
-| `tray-taskbar` | Enumerate tray icons + pinned taskbar apps, ask which to hide/unpin. | You want a cleaner tray/taskbar. Preference-heavy. |
-| `ninite-personalized` | Detect your role (dev / creative / gamer / office) from installed apps. Suggest missing companions. Never auto-installs — outputs `winget install` commands to copy-paste. | You want smart suggestions for what to install. |
-| `unused-apps` | Read Prefetch + UserAssist to find installed apps not launched in 90+ days AND > 100MB. Propose uninstall per app. | You want to reclaim disk from forgotten installs. |
+- Open the folder (Explorer → Desktop → pc-cleaner-snapshots → the latest run).
+- Right-click the `revert.ps1` file → **Run with PowerShell**.
+- That change is undone.
 
-## Principles
+You can also just re-run `/pc-cleaner` and pick different answers.
 
-1. **Never guess with permanent consequences.** Every apply step writes a snapshot first. Revert is one command.
-2. **Ask only when necessary.** If it's obviously safe or obviously required for this machine, we act. Questions are for genuine forks. Batched to ≤4 grouped multi-selects per module.
-3. **Explain every decision.** Every applied change shows up in the run log with a one-line reason.
-4. **Machine-aware.** The `profile` module runs first. All subsequent modules branch on it: laptop-only settings skipped on desktops, Ryzen-specific fixes skipped on Intel, combo-card fixes skipped when a discrete WLAN chip is present.
-5. **Public-friendly.** No hardcoded assumptions about the author's setup. Works on any Windows 11 machine.
+## What it does NOT do
 
-## Safety
+- It doesn't touch your files, photos, documents, or anything in `Documents` / `Pictures` / `Desktop`.
+- It doesn't disable your antivirus (Windows Defender stays fully on).
+- It doesn't install anything you don't specifically say yes to.
+- It doesn't send data anywhere. Everything runs locally.
+- It doesn't require you to reboot for most changes (a few settings do finalize after your next login).
 
-Every module snapshots what it's about to change to `~/Desktop/pc-cleaner-snapshots/<timestamp>/<module>/`:
+---
 
-- Services: `Get-Service | Export-Csv`
-- Registry: `.reg` export of every key touched
-- Power: `powercfg /export` of the active plan
-- Startup: JSON dump of Run keys + Startup folder + tasks
-- Bloat uninstalls: list of package IDs + winget install commands to re-add
-- Storage: what got deleted, sizes, and where DISM ran
+# Technical section
 
-Each module ships with a generated `revert.ps1` per run.
+Below this line is for developers and technical users who want to understand or extend pc-cleaner.
 
-## Structure
+## Architecture
+
+pc-cleaner is a **Claude Code skill**, meaning the actual intelligence lives in Claude at runtime — it reads a set of Markdown files (in `skill/modules/`) that describe what each module does, then uses PowerShell helper scripts (in `ps/`) to actually gather data and apply changes.
 
 ```
 pc-cleaner/
 ├── README.md
-├── knowledge_base/              # Findings dumped as we build
+├── knowledge_base/                 # design decisions, gotchas, project rules from real runs
 ├── skill/
-│   ├── SKILL.md                 # Top-level Claude Code skill instructions + orchestration
-│   └── modules/*.md             # Per-module skill instructions
+│   ├── SKILL.md                    # top-level orchestration + principles + user profile intake
+│   └── modules/                    # 16 module docs, one per capability
 ├── ps/
-│   ├── _lib/                    # Shared PowerShell helpers (snapshot, elevation, logging)
-│   ├── diagnose/*.ps1           # Read-only enumerators. Output JSON.
-│   └── apply/*.ps1              # Change appliers. Take a plan file, log every action.
-└── data/                        # Machine-agnostic curated lists (safe UWP bloat, telemetry keys, etc.)
+│   ├── _lib/common.ps1             # snapshot dir, elevation check, machine profile
+│   ├── pc-cleaner.ps1              # orchestrator entry point
+│   ├── diagnose/*.ps1              # 16 read-only enumerators (JSON out)
+│   └── apply/*.ps1                 # 13 change-appliers (each with snapshot + revert)
+└── data/                           # 47 curated JSON files (safe-disable lists, keys, etc.)
 ```
 
-The skill = Claude reasoning + orchestration.
-The PowerShell = deterministic system access.
-Data = editable curated lists.
+## Modules
+
+### CORE (run by default)
+
+- `profile` — detects machine: laptop, CPU vendor + generation, GPUs, WiFi chip + subsystem OEM (for driver hunt), sleep states, battery, BSOD count.
+- `benchmark` — records boot time, RAM, service count, autostart count. Before/after diff.
+- `services` — audits 300+ Windows services against `data/services_tripwire.json` (do not touch) and `data/services_disable_safe.json` (safe to disable across 10 categories: cellular_modem, enterprise_mdm, legacy_networking, smart_cards, telemetry, gaming, remote_desktop_host, printer_scanner, storage_spaces_backup, mixed_reality).
+- `startup` — Registry Run keys (4 hives) + Startup folders + user Task Scheduler entries. Cross-references tripwire (OneDrive, Docker, password managers, security tools) and safe-disable (Adobe ARM Updater, iTunes helper, GoogleUpdate, CCleaner tray).
+- `bloat` — UWP inventory against `data/bloat_uwp.json` (30+ safe removals + 13 ask + 15 never-touch). Handles system-provisioned apps by calling `Remove-AppxProvisionedPackage -Online` before `Remove-AppxPackage -AllUsers`.
+- `privacy` — 25 registry keys across telemetry / ad ID / activity history / Explorer ads / Bing search / Copilot / Recall / Edge tracking / WiFi Sense / location.
+- `explorer` — Win11 UI tweaks with runtime conflict detection (StartAllBack, ExplorerPatcher). Rule: **the seed machine's current state IS the recommended baseline for non-technical users** — module only proposes changes where the user's state differs from that baseline.
+- `storage` — 46 cleanup sources including CCleaner-tier per-app caches (Chrome deep caches, Discord, Slack, Zoom, Teams, VS Code, Cursor, Notion, Adobe media cache), plus DNS flush, Windows Store cache reset, Windows Update leftover folders.
+
+### OPTIONAL (opt-in via `--include`)
+
+- `power` — PCIe ASPM off, hibernate config, lid = do nothing, WLAN driver LPS zeroed on combo cards (fixes Ryzen 6000 Modern Standby crashes + Bluetooth range on Realtek RTL8822CE / MediaTek MT7921).
+- `network` — SMBv1 removal, LLMNR off, NetBIOS-over-TCP off, optional DoH, optional DNS override (Cloudflare / Quad9).
+- `drivers` — stale + OEM-vs-subsystem-vendor mismatch detection (e.g. Lenovo laptop with HP-vendored WiFi card). Cross-refs `crash_linked_drivers.json` from crashdumps module. Downloads matching SoftPaqs (HP, Dell, Lenovo) but never auto-installs — user runs manually.
+- `defender` — dev toolchain path exclusions (node_modules, pnpm-store, cargo, rustup, gradle, .m2, .nuget, WSL2 vhdx, Docker). RTP stays on.
+- `crashdumps` — installs Windows SDK Debuggers via `winsdksetup.exe /features OptionId.WindowsDesktopDebuggers`, caches MS symbols, `kd -z !analyze -v` on last N minidumps, extracts MODULE_NAME + BUGCHECK_CODE, writes shared `crash_linked_drivers.json` for the drivers module.
+- `tray-taskbar` — one question per pinned taskbar app + one per promoted tray icon. Backs up pins to allow reversal.
+- `ninite-personalized` — role detection (dev / creative / gamer / office / student / modern-solo-dev) from installed apps + running processes + folder markers. Suggests companion apps from `data/ninite_bundles.json`. Never auto-installs — outputs `winget install` commands. Deliberately omits password manager recommendations. Adaptive: asks "how do you listen to music?" before deciding whether to suggest VLC / Audacity.
+- `unused-apps` — UserAssist ROT13 decode + FILETIME extract for last-launched. Cross-refs installed apps ≥ 100 MB with ≥ 90 days idle. `data/unused_apps_never.json` allowlist skips security software, sync clients, VPN clients, password managers.
+
+## Cross-module contracts (in `SKILL.md`)
+
+- `profile.flags` is the single source of truth — no module recomputes it.
+- Explorer restart is deferred to end-of-run (avoid 3+ flickers).
+- WLAN adapter cycle is batched (avoid losing WiFi 3 times per run).
+- Prefetch ordering: `unused-apps` runs before `storage`; `storage` skips Prefetch cleanup if `unused-apps` ran.
+- `AskUserQuestion` budget: 10 total for full CORE run, +2 per opted-in OPTIONAL, 0 in `quick` mode.
+- `crashdumps` writes → `drivers` reads via shared `crash_linked_drivers.json` in the snapshot root.
+
+## Principles
+
+1. **Snapshot before every apply.** Every module writes to `%USERPROFILE%\Desktop\pc-cleaner-snapshots\<ISO-timestamp>\<module>\` with `snapshot.<ext>`, `plan.json`, `apply.log`, `revert.ps1`.
+2. **Ask only when the decision is genuinely ambiguous.** Everything else is decided by machine profile + running processes + installed apps.
+3. **Conversational, one question at a time.** Each MAYBE gets its own Yes / No / "I'm not sure" question. "I'm not sure" triggers a deterministic PS inference rule.
+4. **The seed machine's current state = recommended baseline for non-technical users.** UI preferences only get proposed if the user's state differs from the baseline.
+5. **User-profile-driven.** Two intake questions at run start ("what do you use this for?" + "how technical are you?") set defaults for every module. A "clicker" user gets ~3 total questions; a "developer" gets ~15.
+6. **Never touch tripwire services / settings.** Refuse without `--iknowwhatimdoing` for RPC, DCOM, PlugPlay, Power, EventLog, WMI, Group Policy Client, LSA, CryptSvc, Firewall, DNS client, DHCP client, Audio, Task Scheduler, etc. Full list in `data/services_tripwire.json`.
+7. **All user-facing questions must be plain English.** No `SMB`, `MDM`, `HKCU`, `subsystem`, `LPS flags`, `Prefetch` in the visible question text.
+8. **Check admin ONCE at run start.** If not elevated, tell the user to relaunch Claude Code as Administrator and stop. Do NOT try to elevate per-module — per-module UAC prompts are unreliable on multi-monitor / fullscreen setups.
+
+## Data files
+
+47 JSON files under `data/` cover services, autostarts, UWP apps, registry keys, driver sources, known-bad drivers, bug-check codes, Windows SDK URLs, tray icons, taskbar defaults, Ninite bundles, role signals, dev cache paths, dev toolchain markers, storage sources, storage conflicts, WLAN low-power flags, WiFi/BT combo cards, DNS providers, network risky features, Modern Standby overrides, and more. Edit these — not the code — when adding categorizations.
+
+## Testing
+
+The seed machine used to build and validate this project is a Lenovo Slim 7 ProX 14ARH7 (Ryzen 9 6900HS + RTX 3050 + Radeon 680M) running Windows 11 Home 23H2. Full session findings in `knowledge_base/session_2026-07-04_lenovo_slim7prox.md`. Rules learned from actual runs in `knowledge_base/rules_from_runs.md`. Open work in `knowledge_base/backlog.md`.
 
 ## Requirements
 
-- Windows 11 (22H2+)
+- Windows 11 (22H2+; tested on 23H2 build 22631)
 - Claude Code CLI installed
-- PowerShell 5.1 (built in) or 7+
-- Admin rights (UAC prompt per action batch)
+- PowerShell 5.1 (built-in) or 7+
+- Admin session (see the non-technical usage guide above)
 
-## Install (once shareable)
+## Contributing
 
-```powershell
-git clone https://github.com/<you>/pc-cleaner ~/pc-cleaner
-Copy-Item -Recurse "~/pc-cleaner/skill" "~/.claude/skills/pc-cleaner"
-```
+Extend `data/*.json` first, then module docs in `skill/modules/*.md`, then the PS scripts in `ps/diagnose/` and `ps/apply/`. Each module needs: diagnose script (JSON out), apply script (snapshot + apply + revert), and a module doc following the shape of `services.md`.
 
-Then `/pc-cleaner` from anywhere in Claude Code.
+## License
+
+MIT.
 
 ## Status
 
-Early. `services` module extracted from real cleanup work on a Lenovo Slim 7 ProX 14ARH7 (Ryzen 6900HS) — see `knowledge_base/session_2026-07-04_lenovo_slim7prox.md`. Other module docs in place; PS scripts being added stage by stage.
+Alpha — the tool has been end-to-end tested on the seed machine (services, startup, bloat, privacy, explorer, storage) but the OPTIONAL modules haven't all been validated in a real run yet. Backlog in `knowledge_base/backlog.md`.
