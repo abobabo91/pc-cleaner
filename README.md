@@ -6,6 +6,18 @@ Claude Code skill that audits, categorizes, and cleans a Windows PC. Public / sh
 
 Runs a machine-aware audit of everything that slows down a Windows PC, categorizes each finding as **KEEP** / **KEEP-FOR-YOU** / **DISABLE-SAFE** / **MAYBE**, applies the safe cleanups automatically, asks you targeted questions only for the genuinely ambiguous ones, and produces a full revert path for every action.
 
+## Important: launch Claude Code as Administrator first
+
+pc-cleaner makes changes that require administrator permission. Before running `/pc-cleaner`, launch Claude Code (or the terminal you use to invoke it) as Administrator — otherwise the tool will detect the missing elevation, stop, and tell you to relaunch.
+
+On Windows 11:
+1. Close Claude Code if it's already running.
+2. Right-click the Start button → **Terminal (Admin)** (or press Win+X → A). Click Yes on the UAC prompt.
+3. Launch Claude Code from that admin terminal (`claude` or however you launch it).
+4. Now type `/pc-cleaner`.
+
+Running Claude Code as admin means the whole pc-cleaner run happens in one elevated session — you see one UAC prompt at Step 2 and never again. If you don't do this, individual module applies will trigger UAC prompts that may land off-screen or behind other windows, causing them to fail silently.
+
 ## How you use it
 
 ```

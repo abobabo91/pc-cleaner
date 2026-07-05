@@ -192,6 +192,245 @@
       "riskLevel": "ask",
       "reclaimEstimate": 3000,
       "notes": "ResetBase is one-way — cannot uninstall installed superseded Windows Updates afterward. Ask user."
+    },
+    {
+      "name": "chrome_code_cache",
+      "description": "Chrome Code Cache (JavaScript compiled code) - regenerated on use.",
+      "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Code Cache",
+      "filter": "*",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "chrome_gpu_cache",
+      "description": "Chrome GPU shader cache.",
+      "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\GPUCache",
+      "filter": "*",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "chrome_media_cache",
+      "description": "Chrome Media Cache (video/audio streams).",
+      "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Media Cache",
+      "filter": "*",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "chrome_service_worker_cache",
+      "description": "Chrome Service Worker cache (PWAs).",
+      "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Service Worker\\CacheStorage",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "firefox_cache",
+      "description": "Firefox web cache across all profiles.",
+      "path": "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles",
+      "filter": "cache2",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0,
+      "notes": "Iterate profiles/*/cache2 rather than one path."
+    },
+    {
+      "name": "discord_cache",
+      "description": "Discord message + media cache.",
+      "path": "%APPDATA%\\discord\\Cache",
+      "filter": "*",
+      "minAgeDays": 7,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "discord_code_cache",
+      "description": "Discord Code Cache.",
+      "path": "%APPDATA%\\discord\\Code Cache",
+      "filter": "*",
+      "minAgeDays": 7,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "discord_gpu_cache",
+      "description": "Discord GPU Cache.",
+      "path": "%APPDATA%\\discord\\GPUCache",
+      "filter": "*",
+      "minAgeDays": 7,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "slack_cache",
+      "description": "Slack message + media cache.",
+      "path": "%APPDATA%\\Slack\\Cache",
+      "filter": "*",
+      "minAgeDays": 7,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "slack_code_cache",
+      "description": "Slack Code Cache.",
+      "path": "%APPDATA%\\Slack\\Code Cache",
+      "filter": "*",
+      "minAgeDays": 7,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "zoom_logs",
+      "description": "Zoom logs and diagnostic files.",
+      "path": "%APPDATA%\\Zoom\\logs",
+      "filter": "*",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "teams_new_cache",
+      "description": "Microsoft Teams (new / Store) cache.",
+      "path": "%LOCALAPPDATA%\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache",
+      "filter": "*",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "teams_classic_cache",
+      "description": "Microsoft Teams (classic) cache.",
+      "path": "%APPDATA%\\Microsoft\\Teams\\Cache",
+      "filter": "*",
+      "minAgeDays": 14,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "spotify_data",
+      "description": "Spotify local cached tracks + playlist metadata.",
+      "path": "%LOCALAPPDATA%\\Spotify\\Data",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "ask",
+      "reclaimEstimate": 0,
+      "notes": "Ask — if user uses Spotify offline downloads, this may include them."
+    },
+    {
+      "name": "vscode_cache",
+      "description": "Visual Studio Code cache + extension host cache.",
+      "path": "%APPDATA%\\Code\\Cache",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "vscode_cached_data",
+      "description": "VS Code CachedData (bytecode caches).",
+      "path": "%APPDATA%\\Code\\CachedData",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "cursor_cache",
+      "description": "Cursor editor cache.",
+      "path": "%APPDATA%\\Cursor\\Cache",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "notion_cache",
+      "description": "Notion desktop cache.",
+      "path": "%APPDATA%\\Notion\\Cache",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "adobe_media_cache",
+      "description": "Adobe Common Media Cache — grows large with Premiere/After Effects use.",
+      "path": "%APPDATA%\\Adobe\\Common\\Media Cache",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "ask",
+      "reclaimEstimate": 0,
+      "notes": "Ask — Adobe rebuilds these when you re-open projects."
+    },
+    {
+      "name": "adobe_media_cache_files",
+      "description": "Adobe Common Media Cache Files.",
+      "path": "%APPDATA%\\Adobe\\Common\\Media Cache Files",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "ask",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "onedrive_iconcache",
+      "description": "OneDrive icon overlay cache.",
+      "path": "%LOCALAPPDATA%\\Microsoft\\OneDrive\\IconCache",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "windows_update_leftover_bt",
+      "description": "Leftover from a failed / interrupted Windows Update ($Windows.~BT).",
+      "path": "C:\\$Windows.~BT",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "windows_update_leftover_ws",
+      "description": "Leftover from Windows Setup ($Windows.~WS).",
+      "path": "C:\\$Windows.~WS",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "defender_scan_history",
+      "description": "Windows Defender scan history.",
+      "path": "%PROGRAMDATA%\\Microsoft\\Windows Defender\\Scans\\History",
+      "filter": "*",
+      "minAgeDays": 30,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0,
+      "notes": "Stops MpKslDrv briefly but harmless."
+    },
+    {
+      "name": "dns_cache_flush",
+      "description": "Flush DNS resolver cache.",
+      "path": "COMMAND:ipconfig /flushdns",
+      "filter": "",
+      "minAgeDays": 0,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0
+    },
+    {
+      "name": "windows_store_cache",
+      "description": "Reset Windows Store cache.",
+      "path": "COMMAND:wsreset.exe -i",
+      "filter": "",
+      "minAgeDays": 0,
+      "riskLevel": "auto",
+      "reclaimEstimate": 0,
+      "notes": "wsreset.exe with -i is silent."
     }
   ]
 }
