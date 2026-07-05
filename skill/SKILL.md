@@ -100,6 +100,19 @@ Good vs bad examples:
 8. Emit final summary: what was applied, what was skipped, snapshot folder, one-command revert.
 ```
 
+## Elevation: get admin ONCE at the start, not per module
+
+Before the run starts, check if the current session is already Administrator (`([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)`).
+
+- If NOT admin: tell the user in plain English:
+  > "This tool needs administrator permission to change some settings. Please close Claude Code (or the terminal you launched it from) and re-open it as Administrator, then run `/pc-cleaner` again."
+  > "On Windows 11: right-click the Start button → Terminal (Admin) → run Claude Code from there."
+  Stop the run. Do NOT try to elevate individual module applies with `Start-Process -Verb RunAs` — that produces a UAC prompt per module that the user often can't see (secure-desktop windows land off-screen on multi-monitor setups, hide behind fullscreen apps, or dismiss too fast to catch).
+
+- If admin: proceed. All apply scripts run in the same elevated session with zero further prompts.
+
+Never fall through to per-module UAC prompts. It's unreliable UX.
+
 ## User profile — 2 baseline questions at the very start
 
 Before any module runs, ask these two questions in plain English. They define the *user profile* which sets sensible defaults for every subsequent question. This means non-technical users don't get bombarded with jargon, and developers get useful cleanups skipped for regular users.

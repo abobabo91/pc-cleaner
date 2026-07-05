@@ -33,6 +33,35 @@ Every time a real user pushes back on a question, that pushback becomes a rule h
 - **Set-as-default is a real feature.** After installing IrfanView, VLC, Chrome — always offer to set them as defaults for their file types. Open `ms-settings:defaultapps` with instructions.
 - Password managers: deliberately omitted (see main data file). If a user asks about them, list 3 options (Bitwarden free / 1Password paid / KeePassXC offline) with one line each — don't push a specific one.
 
+## The seed machine's current state IS the recommendation for non-technical users
+
+Discovered during the 2026-07-05 run when I silently applied 4 explorer UI tweaks and the user pushed back:
+
+> "i dont have this at all, i dont want it. my setting should be the recommended for the non technical users"
+
+**Rule:** For any UI or visual preference (Win11 right-click menu, Widgets button, Search box style, Copilot button, taskbar alignment, etc.), the module MUST:
+
+1. **First: detect what the user currently has set.**
+2. **Compare to the seed machine's state** (which represents "recommended for non-technical users").
+3. **If the user already matches the recommended baseline → do nothing, don't even ask.**
+4. **If the user's state differs from the baseline → ask, framed as "want to try the more common setting?"**
+5. **Only technical/developer users get asked "want classic Windows 10 style?" — that's a power-user preference, not a recommendation for everyone.**
+
+The idea is that the seed machine's owner (a moderately-technical solo developer) has curated defaults that a typical non-technical user would find comfortable. That curated state = baseline.
+
+Concrete decisions from this:
+- Windows 11 right-click menu (default, two-step for advanced) is what non-technical users get.
+- Widgets button hidden = recommended for non-technical.
+- Search box hidden = recommended for non-technical.
+- Copilot button hidden = recommended for non-technical (also matches the "don't advertise Microsoft products they don't use" principle).
+- Light mode = recommended for non-technical (matches what most people have out of the box).
+
+## Elevation
+
+- pc-cleaner requires admin. Instead of trying to elevate mid-run (which produces UAC prompts that users can't see reliably), the tool must check admin at the very start.
+- If not admin: explain plainly, tell them to relaunch Claude Code as Administrator, stop.
+- Once admin: proceed with all applies in the same elevated session.
+
 ## Global rules — apply to every module
 
 1. **If the user answers "I don't use [App X]" for any app, immediately:**
