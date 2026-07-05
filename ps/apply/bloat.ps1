@@ -45,6 +45,20 @@ foreach ($item in $remove) {
         Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
     }
 
+    # De-provision the app first (so it doesn't reinstall for new user profiles and current user removal is allowed).
+    # Required for system-provisioned apps like Xbox, People, Feedback Hub - otherwise Remove-AppxPackage returns Access Denied.
+    if (Test-Admin) {
+        try {
+            $prov = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $item.name }
+            if ($prov) {
+                Remove-AppxProvisionedPackage -Online -PackageName $prov.PackageName -ErrorAction Stop | Out-Null
+                Write-Log $log 'DEPROV' "de-provisioned $($item.name)"
+            }
+        } catch {
+            Write-Log $log 'WARN' "de-provision $($item.name): $($_.Exception.Message)"
+        }
+    }
+
     try {
         if (Test-Admin) {
             Remove-AppxPackage -Package $pkg.PackageFullName -AllUsers -ErrorAction Stop
