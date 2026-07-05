@@ -85,8 +85,10 @@ Good vs bad examples:
 1. Parse invocation. Determine module list.
 2. Confirm scope in one line: "Running: services, startup, bloat, privacy, explorer, storage. Skipping: crashdumps."
 3. Run `profile` diagnose. Cache machine profile for the whole run.
-4. If full run: ask ONE up-front question — "Which OPTIONAL modules should I include?" (multi-select).
-5. Run `benchmark` (before).
+4. ASK THE USER 2 BASELINE QUESTIONS UP FRONT (see "User profile" section below).
+   These answers become the defaults for every module downstream.
+5. If full run: ask ONE up-front question — "Which OPTIONAL modules should I include?" (multi-select).
+6. Run `benchmark` (before).
 6. For each module in order:
    a. Run its `diagnose` script → JSON.
    b. Read the module's .md doc for its categorization + question rules.
@@ -97,6 +99,74 @@ Good vs bad examples:
 7. Run `benchmark` (after). Show diff table.
 8. Emit final summary: what was applied, what was skipped, snapshot folder, one-command revert.
 ```
+
+## User profile — 2 baseline questions at the very start
+
+Before any module runs, ask these two questions in plain English. They define the *user profile* which sets sensible defaults for every subsequent question. This means non-technical users don't get bombarded with jargon, and developers get useful cleanups skipped for regular users.
+
+**Baseline Q1 — "What do you mostly use this computer for?"** (single-select)
+- Browsing the web, email, YouTube, social media
+- School / office work (documents, spreadsheets, video calls)
+- Photo, video, or music creation
+- Gaming
+- Software development
+- A mix of these (I'll pick a specific answer if needed)
+
+**Baseline Q2 — "How comfortable are you with tech?"** (single-select)
+- I mostly just click things and want stuff to work
+- I know my way around Settings and can Google problems
+- I'm technical — I use the command line sometimes, I've edited the registry
+- I'm a developer or IT pro
+
+Store both answers in `profile.userIntent` and `profile.userTechnicalLevel`. Every module doc must specify how its questions/defaults change based on these.
+
+### How each user profile affects module defaults
+
+**userTechnicalLevel = "clicker" (level 1):**
+- Skip ALL developer/advanced modules by default (defender, crashdumps, ssh-agent, drivers-manual, unused-apps).
+- Never ask about "hidden system files", "PowerShell", "registry keys" etc. — use even simpler wording, hide advanced options.
+- Recycle Bin, thumbnail cache, WU cache — auto-clean (they'll never miss them).
+- Aggressive defaults: uninstall built-in apps they clearly don't use, no need to ask about Notepad / Calc (they'll be kept anyway).
+- Never uninstall apps they might use ambiguously — err heavily on keep.
+- crashdumps module: don't offer unless there are 3+ recent BSODs.
+
+**userTechnicalLevel = "power user" (level 2):**
+- Standard flow. Show tweaks like classic right-click, hide Widgets. Ask about Photos/Camera.
+- Skip developer-specific modules (defender exclusions for toolchains, ssh-agent) unless they ask.
+- crashdumps offered if any recent BSODs.
+
+**userTechnicalLevel = "technical" (level 3):**
+- Include developer modules by default.
+- Ask about SSH, ssh-agent, Windows Terminal, WSL2 preferences.
+- Show all options — no dumbing-down. Include DISM cleanup as an offered option.
+
+**userTechnicalLevel = "developer" (level 4):**
+- Include ALL modules by default including drivers hunt + crashdumps + defender toolchain exclusions.
+- Offer ssh-agent enable, PowerShell 7 install, Windows Terminal.
+- Aggressive unused-apps thresholds (offer at 60 days idle instead of 90).
+- Suggest dev-role app installs (VS Code, Git, GitHub CLI, Docker if missing).
+
+**userIntent = "browsing"** or **"office"**:
+- Skip gaming module treatments (Epic launcher auto-start = disable without asking).
+- Skip creator apps in ninite-personalized.
+- Keep media/streaming assumption for VLC skip.
+
+**userIntent = "creation"**:
+- Ninite-personalized includes creator bundle (Audacity, HandBrake, OBS, IrfanView).
+- Local media assumed → VLC + audio tools included.
+- Storage module: warn extra loud before touching any user-created folders.
+
+**userIntent = "gaming"**:
+- Keep Xbox Game Bar (don't silently uninstall).
+- Keep Epic, Steam, Discord auto-starts (don't ask).
+- Suggest gamer bundle: Steam, Discord, GeForce Experience.
+
+**userIntent = "development"**:
+- Same as technical level 3+ regardless of tech level answer.
+- ssh-agent auto-enabled if git present.
+- Defender exclusions asked for every detected toolchain.
+
+The two baseline questions replace the need for many mid-module asks. A "clicker" user picking "browsing" gets ~3 total questions across all CORE modules. A developer picking "development" gets ~15.
 
 ## PowerShell contract
 
