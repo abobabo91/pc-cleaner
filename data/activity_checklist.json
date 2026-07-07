@@ -1,0 +1,168 @@
+{
+  "_comment": "Primary evidence source for pc-cleaner decisions on non-technical machines. Presented as ONE AskUserQuestion call with 4 multi-select questions, ~15 checkboxes total. Each checkbox maps to a set of consequences in the unified plan. Forensic signals (UserAssist, Prefetch, file associations) become CONFIRMATION only — if a checkbox is unticked but forensic signals show recent usage, KEEP wins. Default when a signal is missing: KEEP (don't remove things the user didn't explicitly deprioritize). Added 2026-07-07 after user pointed out that autostart / file associations reflect OEM defaults, not deliberate choices, on non-technical machines.",
+  "questions": [
+    {
+      "id": "daily_use",
+      "prompt": "What do you use this laptop for regularly? (Tick everything that applies.)",
+      "options": [
+        {
+          "id": "browsing",
+          "label": "Web browsing, email, YouTube, social media",
+          "implies": {
+            "keep": ["default browser + its updater", "OneDrive if signed in"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "office",
+          "label": "Documents, spreadsheets, video calls (Word, Excel, Zoom, Teams)",
+          "implies": {
+            "keep": ["ClickToRunSvc (Office)", "Teams", "webcam camera app", "Windows Print Spooler if a printer is configured"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "creation",
+          "label": "Photos, music, or video editing / creation",
+          "implies": {
+            "keep": ["Microsoft.Windows.Photos", "codec extensions (HEIF, HEVC, RAW, WebP)", "AudioEndpointBuilder + spatial audio", "USB device power (external interfaces)"],
+            "removeSafely": ["Groove Music (deprecated)", "Movies & TV (deprecated)"],
+            "suggest": ["VLC", "HandBrake", "IrfanView", "Audacity (via ninite-personalized)"]
+          }
+        },
+        {
+          "id": "gaming",
+          "label": "Games (Steam, Epic, Xbox app, PC games)",
+          "implies": {
+            "keep": ["Microsoft.XboxGamingOverlay + family (XboxGameOverlay, SpeechToText, TCUI)", "Microsoft.GamingApp (Xbox app)", "Microsoft.XboxIdentityProvider", "GameInputSvc + GameInputRedistService", "XboxLive services (XblAuthManager, XboxNetApiSvc, XblGameSave, XboxGipSvc)", "BcastDVRUserService (Game DVR)", "GraphicsPerfSvc"],
+            "removeSafely": [],
+            "suggest": ["Discord", "GeForce Experience if NVIDIA"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "peripherals",
+      "prompt": "What do you regularly connect to this PC? (Tick everything you use.)",
+      "options": [
+        {
+          "id": "bluetooth",
+          "label": "Bluetooth headphones, speakers, mouse, keyboard, or earbuds",
+          "implies": {
+            "keep": ["bthserv + BthAvctpSvc + BluetoothUserService", "PhoneSvc (hands-free profile — headsets with mic)", "USB selective suspend off consideration", "Realtek BT firmware + driver"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "printer",
+          "label": "A printer or scanner",
+          "implies": {
+            "keep": ["Print Spooler + PrintNotify + PrintWorkflowUserSvc", "WiaRpc + StiSvc (scanner)", "fdPHost + FDResPub (WSD network printers) — already tripwire"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "phone",
+          "label": "A phone — Phone Link, photo transfer, backup",
+          "implies": {
+            "keep": ["MessagingService (SMS relay)", "CDPSvc (already tripwire — Phone Link discovery)", "Microsoft.YourPhone app (Phone Link)", "Apple Mobile Device Service if iPhone"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "cast",
+          "label": "I cast my screen or audio wirelessly to a TV / speaker (Miracast, DLNA)",
+          "implies": {
+            "keep": ["SSDPSRV + upnphost + WFDSConMgrSvc (all tripwire) — cast pipeline"],
+            "removeSafely": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cloud_and_signin",
+      "prompt": "Which of these apply to you? (Tick everything true.)",
+      "options": [
+        {
+          "id": "ms_account",
+          "label": "I sign into this PC with a Microsoft account (or use Outlook.com, Office 365)",
+          "implies": {
+            "keep": ["TokenBroker (tripwire)", "wlidsvc", "Microsoft.AAD.BrokerPlugin", "built-in Mail / Calendar UWP if used", "vaultsvc (Credential Manager — tripwire)"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "onedrive",
+          "label": "I use OneDrive to sync files",
+          "implies": {
+            "keep": ["OneSyncSvc_bd465 template", "CloudBackupRestoreSvc_bd465", "OneDrive.exe + updater", "%LOCALAPPDATA%\\OneDrive cache (do not clean)"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "teams_work",
+          "label": "I use Microsoft Teams for work",
+          "implies": {
+            "keep": ["MSTeams (or Microsoft.Teams) UWP", "TaskbarMn (Chat icon) or the Teams pin", "webthreatdefusersvc (Teams uses it for link safety)"],
+            "removeSafely": []
+          }
+        },
+        {
+          "id": "windows_g",
+          "label": "I take screenshots or record my screen with Windows key + G (Xbox Game Bar)",
+          "implies": {
+            "keep": ["Microsoft.XboxGamingOverlay + family (XboxGameOverlay, SpeechToText, TCUI)"],
+            "removeSafely": [],
+            "note": "Explicit signal that Game Bar backs a used feature — overrides gamer-signal inference"
+          }
+        }
+      ]
+    },
+    {
+      "id": "windows_prefs",
+      "prompt": "How do you like Windows to feel? (Tick everything that matches.)",
+      "options": [
+        {
+          "id": "start_search",
+          "label": "I type in the Start menu to find files and open apps",
+          "implies": {
+            "keep": ["WSearch", "Windows Search indexer database"],
+            "removeSafely": [],
+            "note": "Keeps BingSearchEnabled decision as 'ask' vs silent-disable"
+          }
+        },
+        {
+          "id": "dark_mode",
+          "label": "I prefer dark mode for Windows and apps",
+          "implies": {
+            "apply": ["AppsUseLightTheme = 0", "SystemUsesLightTheme = 0"],
+            "note": "Direct evidence — no inference needed; taste question resolved"
+          }
+        },
+        {
+          "id": "virtual_desktops",
+          "label": "I use virtual desktops (Win+Tab or the taskbar squares icon) to organize windows",
+          "implies": {
+            "keep": ["ShowTaskViewButton = 1 (default)", "Task View button on taskbar"],
+            "note": "Direct evidence — the previously ask-gated Task View button decision is resolved"
+          }
+        },
+        {
+          "id": "recall",
+          "label": "I use (or want to try) Windows Recall — the AI feature that takes screenshots for search",
+          "implies": {
+            "keep": ["Recall enrolled — DisableAIDataAnalysis = 0"],
+            "note": "Direct evidence — resolves the Recall ask_user gate"
+          }
+        }
+      ]
+    }
+  ],
+  "inference_rules": {
+    "unticked_default": "KEEP — an unticked box means 'not confirmed', not 'hate it'. Only remove/disable when BOTH (a) checkbox unticked AND (b) forensic signal shows zero recent usage (UserAssist count = 0 AND Prefetch shows no launch in 90 days) AND (c) the item is not in tripwire.",
+    "forensic_override": "If a checkbox is unticked BUT UserAssist or Prefetch shows recent usage, TRUST the forensic signal (KEEP). User may have forgotten to tick; can't be wrong about the count.",
+    "tripwire_wins": "Any service in data/services_tripwire.json stays regardless of checkbox state. Checkboxes affect the ask_user category items and the bloat / cleanup / UI-tweak buckets — never override tripwire.",
+    "hardware_still_gates": "Skip conditions from module docs still apply. If Get-PnpDevice shows no biometric hardware, don't apply Windows-Hello-related tweaks even if 'I sign into MS account' is ticked."
+  },
+  "coverage_target": "These 16 checkboxes cover the decisions that determine ~85% of what pc-cleaner touches on a typical machine. Anything not covered gets Claude's usage-based inference (from services.md / bloat.md etc.) with KEEP as the tiebreaker."
+}

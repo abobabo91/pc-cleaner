@@ -42,15 +42,21 @@ Once installed, every time you want to clean your PC:
 
 That's it. Here's what happens:
 
-- **The tool asks 2 quick questions** — what you use your PC for, and how technical you are. About 10 seconds.
-- **It looks at your PC** — reads which apps you have, when you last opened each one, what hardware you have. About 20 seconds.
-- **It shows you a list** — grouped as: apps you don't use, apps you DO use (kept), Windows features safe to turn off, cleanup items, small UI tweaks. Each item has a plain-English reason like "you never opened this" or "you have no SIM card slot".
-- **You look at the list and pick one:**
-  - **Apply everything** — done in about a minute.
-  - **Change something** — just type what to skip: "keep Skype" or "don't empty recycle bin". The list updates.
-  - **Cancel** — nothing changes.
+1. **The tool asks 2 quick profile questions** — what you use your PC for, and how technical you are. Sets sensible defaults. ~10 seconds.
+2. **You tick some checkboxes** — one page with 4 short lists about what you actually do on this computer:
+   - "What do you use this laptop for?" — browsing, office, creation, gaming (tick all that apply)
+   - "What do you connect to it?" — Bluetooth headphones, printer, phone, wireless cast
+   - "Which of these apply to you?" — Microsoft account, OneDrive, Teams for work, Win+G screenshots
+   - "How do you like Windows to feel?" — Start-menu search, dark mode, virtual desktops, Recall
+   Total ~16 checkboxes. ~30 seconds.
+3. **It looks at your PC** — cross-checks your ticks against launch history, installed apps, hardware presence. ~20 seconds silent.
+4. **It shows you a list** — grouped as: apps you don't use, apps you DO use (kept), Windows features safe to turn off, features it will leave alone (with reasons), cleanup items, UI tweaks. Every "keep" reason cites your own ticks: *"Keeping Xbox Game Bar because you ticked 'I take screenshots with Win+G'"*.
+5. **You look at the list and pick one:**
+   - **Apply everything** — done in about a minute.
+   - **Change something** — just type what to skip: "keep Skype" or "don't empty recycle bin". The list updates.
+   - **Cancel** — nothing changes.
 
-**Total interaction: about 30 seconds of reading + one click.** No mid-run interruptions.
+**Total interaction: about a minute of ticking + reading.** No mid-run interruptions. The tool asks about **3 things total** (profile / checklist / apply), each one a single screen.
 
 ## What if something goes wrong?
 

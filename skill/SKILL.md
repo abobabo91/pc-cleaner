@@ -86,7 +86,7 @@ Good vs bad examples:
 
 ## Top-level orchestration flow — the list-based batched model
 
-The goal: for a non-technical user, the whole run is **2 baseline questions → look at a list → one Apply button**. Not a per-module interview. Individual module docs still specify the underlying inference rules — the orchestrator reads all of them once and batches the presentation.
+The goal: for a non-technical user, the whole run is **2 baseline questions → 1 activity checklist page (4 short lists of checkboxes) → look at the plan → one Apply button**. Not a per-module interview. Individual module docs still specify the underlying inference rules — the orchestrator reads all of them once and batches the presentation.
 
 ```
 1. Parse invocation. Determine module list.
@@ -95,36 +95,49 @@ The goal: for a non-technical user, the whole run is **2 baseline questions → 
     settings, File Explorer, and disk cleanup. This takes about 20 seconds
     to look, then I'll show you what I found."
 3. Run `profile` diagnose. Cache machine profile for the whole run.
-4. Ask the 2 BASELINE questions (usage + tech level). These auto-decide the
-   majority of downstream items.
-5. Run ALL diagnose scripts in parallel (they're read-only and independent).
+4. Ask the 2 BASELINE questions (usage + tech level). Sets meta-defaults.
+5. Ask the ACTIVITY CHECKLIST — ONE AskUserQuestion call with 4 multi-
+   select questions (~16 checkboxes total). Reads data/activity_checklist.json.
+   This is the primary evidence source about what the user actually does —
+   because on non-technical machines, autostart entries and file associations
+   reflect OEM defaults rather than deliberate user choices.
+6. Run ALL diagnose scripts in parallel (they're read-only and independent).
    No apply yet. This is the "look at your PC" phase.
-6. Build the UNIFIED PLAN by walking every module's inference rules with the
-   baseline profile as context. For each candidate item:
-   a. Detect state on this machine (installed / running / hardware present).
-   b. Apply the inference rule (many resolve to a definite YES/NO without asking).
-   c. Mark items that STILL need user input as `needsInput:true`.
-6a. If `userTechnicalLevel == "clicker"`: force `needsInput:false` on all
-    items whose category is technical (LLMNR, Prefetch, DoH provider,
-    DISM /resetbase, Fast Startup, ssh-agent). Fall back to the safe
-    default from the module's inference rule.
-7. PRESENT the plan as structured lists in assistant text (see next section
-   for the exact template). This is the "here's what I found" moment.
-8. Ask ONE question: "Apply all this, change something, or cancel?"
+7. Build the UNIFIED PLAN by combining THREE evidence sources with these
+   priorities (highest first):
+   a. Tripwire — always wins. Never disabled regardless of anything else.
+   b. Hardware detection — no fingerprint sensor → no Windows Hello Q,
+      no SIM slot → cellular services safe to disable, etc.
+   c. Activity checklist answers — a ticked box KEEPS its "implies.keep"
+      list. Direct evidence beats forensic guessing.
+   d. Forensic signals (UserAssist launch counts, Prefetch timestamps,
+      currently-running processes) — used to OVERRIDE unticked boxes:
+      if the user didn't tick "I game" but UserAssist shows they launched
+      Steam 47 times last month, KEEP wins (they forgot to tick).
+   e. Module inference rules from the module docs — the fallback when
+      none of the above apply.
+7a. If `userTechnicalLevel == "clicker"`: force taste-decision items
+    (dark mode, DNS provider, DISM /resetbase, ssh-agent, Fast Startup)
+    to the module's safe default. No "must ask" surfaces for them.
+8. PRESENT the plan as structured lists in assistant text (see next section
+   for the exact template). Each "keep" reason cites the checkbox that
+   informed it ("Because you ticked 'I take screenshots with Win+G'"),
+   which builds trust — the user sees their own answers reflected back.
+9. Ask ONE question: "Apply all this, change something, or cancel?"
    - Apply all — proceed.
    - Change something — free-form input: "Just tell me what to keep or
      what to skip." Parse into plan edits; re-show; ask again.
    - Cancel — stop here. This is also the "dry run" outcome.
-9. Run `benchmark` (before).
-10. For each module: call its `apply` script (elevated) with the batched
+10. Run `benchmark` (before).
+11. For each module: call its `apply` script (elevated) with the batched
     plan JSON (every ask-gated entry has `confirmed:true`).
-11. Run `ps/verify/smoke.ps1`. If any FAIL:
+12. Run `ps/verify/smoke.ps1`. If any FAIL:
     - Print the failing flows in plain English.
     - Point at the module suspects.
     - Offer: "Want me to undo the last changes? Type 'undo' to revert."
     Do NOT auto-revert.
-12. Run `benchmark` (after). Show one-line diff.
-13. Final summary — three lines max:
+13. Run `benchmark` (after). Show one-line diff.
+14. Final summary — three lines max:
     "Done. Changed 47 things, freed 4.2 GB. If anything looks wrong,
      type '/pc-cleaner undo' — I'll roll it all back."
 ```
@@ -143,43 +156,61 @@ Here's what I found on your PC. I grouped it so you can skim.
 
 ## Apps I noticed you don't use
 
-Based on when you last opened them (or that you never did):
+You didn't tick "gaming" and these were never opened:
 
 - Xbox app — never opened
 - Solitaire Collection — never opened
+
+You didn't tick "creation" and these are deprecated:
+
+- Movies & TV — never opened
+- Groove Music — never opened
+
+You didn't tick anything that suggests you use these:
+
 - Feedback Hub — never opened
 - Get Started / Tips — never opened
 - LinkedIn — never opened
-- Skype — 8 months ago
-- Movies & TV — 6 months ago (deprecated app)
-- Groove Music — never opened (deprecated app)
+- Skype — last opened 8 months ago
 
-→ I'll uninstall these. Frees ~1.4 GB.
+→ I'll uninstall these 8 apps. Frees ~1.4 GB.
 
 ## Apps I noticed you DO use — keeping these
 
-- Photos, Camera, Calculator, Sticky Notes, Snipping Tool
-- Xbox Game Bar — because you press Windows+G sometimes (screenshot / recording)
+- Photos, Camera, Calculator — because you ticked "creation"
+- Xbox Game Bar — because you ticked "I take screenshots with Win+G"
+- OneDrive — because you ticked "I use OneDrive"
+- Microsoft Teams — because you ticked "I use Teams for work"
 - Lenovo Vantage — because this is a Lenovo laptop under warranty
 
 ## Windows features I'll turn off
 
-(These are all safe because your PC doesn't have the hardware or you never
-use them. If any surprise you, just say so.)
+You didn't tick these AND your PC has no hardware for them:
 
-- Cellular / LTE data — your laptop has no SIM card slot
+- Cellular / LTE data — no SIM slot in your laptop
 - Smart card reader — you don't have one
 - Fax — nobody has a fax
-- Xbox Live networking — you don't play online multiplayer
-- Windows Insider — you're on the stable channel
+
+You didn't tick "gaming":
+
+- Xbox Live networking (XblAuthManager, XblGameSave, XboxNetApiSvc)
+- Game DVR broadcasting
+
+You didn't tick "printer":
+
+- Windows Print Spooler
+- Scanner services
+
+Universal safe:
+
 - Old file-sharing from 2005 (SMBv1) — modern devices don't use it
-- Print Spooler — you told me you don't print
+- Windows Insider service — you're on the stable channel
 
 ## Windows features I'll leave alone (even though they look disable-able)
 
-- Bluetooth pairing wizard back-end — you'd lose the ability to add new BT devices
-- Nearby Sharing / Quick Assist / Phone Link discovery
-- Windows Copilot Recall — asking about this separately below
+- Bluetooth pairing wizard back-end — you ticked "Bluetooth" AND this is needed even if you didn't, to keep the "Add device" flow working
+- Nearby Sharing / Quick Assist / Phone Link discovery — you ticked "phone"
+- Function Discovery services — even without checkboxes, disabling these would break the Add-Printer wizard for future you
 
 ## Cleanup
 
@@ -188,25 +219,18 @@ use them. If any surprise you, just say so.)
 - Windows.old (18 GB, from your last big Windows update 23 days ago) — **can't be rolled back after**
 - Compact Windows update history (2.4 GB, takes 5-15 min of CPU) — safe
 
-## Small UI tweaks
+## UI tweaks (from your Windows preference ticks)
 
-- Hide the Widgets icon on your taskbar
-- Show file extensions in File Explorer (.jpg, .docx, .exe)
-- Left-align the taskbar (Windows 10 style)
-- Hide the Chat (purple bubble) icon
-- Hide the Copilot icon
-
-## Things I need to ask about
-
-Only these need your input — everything above is already decided:
-
-1. **Windows Recall** (auto-screenshots for search): turn off, or keep on if you use it?
-2. **Bing/web results in Start menu search**: keep, or files-and-apps-only?
-3. **Dark mode**: turn on, or leave alone?
-4. **Sleep vs Hibernate on battery**: which do you want after 30 min idle?
+- Dark mode ON — because you ticked "I prefer dark mode"
+- Keep Task View button — because you ticked "I use virtual desktops"
+- Keep Start menu file search — because you ticked "I search in Start"
+- Recall stays OFF — you didn't tick "I use Recall"
+- Hide the Widgets icon (unticked, and it runs a WebView2 process)
+- Show file extensions (small usability + security win)
+- Left-align the taskbar (Windows 10 style; toggle back with one tick)
 
 ---
-Ready to apply everything above? (I'll ask about the 4 items in "Things I need to ask" as I go.)
+Ready to apply everything above? Or do you want to skip anything specific?
 ```
 
 Then the single AskUserQuestion:
@@ -217,14 +241,15 @@ Then the single AskUserQuestion:
 
 ### Rules for the plan preview
 
-1. **Every "Apps I noticed you don't use" entry names WHEN the user last opened it.** "Never opened", "8 months ago". Not a raw filename or PackageFamilyName.
-2. **Every "Apps you DO use" entry says WHY it's kept.** "Because you press Windows+G", "Because this is a Lenovo laptop". Not just an app name.
-3. **Every "Windows features I'll turn off" entry explains in plain English why it's safe.** "Your laptop has no SIM slot", "You don't have one". Not "hardware not detected".
-4. **The "leave alone" section is critical for building trust.** Users assume aggressive cleaners nuke random things. Explicitly showing what's PRESERVED and why demonstrates the tool understands hidden dependencies.
+1. **Every "Apps I noticed you don't use" entry names WHEN the user last opened it.** "Never opened", "8 months ago". Not a raw filename or PackageFamilyName. Include the checklist evidence too when relevant: "You didn't tick 'I play games' AND Xbox app was never opened".
+2. **Every "Apps you DO use" entry says WHY it's kept, citing the checklist.** "Because you ticked 'I take screenshots with Win+G'", "Because you ticked 'I use OneDrive'", "Because you ticked 'gaming' AND Steam is installed". Direct checkbox references build trust by reflecting the user's own answers back.
+3. **Every "Windows features I'll turn off" entry explains in plain English why it's safe.** "Your laptop has no SIM slot", "You didn't tick 'I use a printer' AND Get-Printer shows only PDF printers". Not "hardware not detected".
+4. **The "leave alone" section is critical for building trust.** Users assume aggressive cleaners nuke random things. Explicitly showing what's PRESERVED and why demonstrates the tool understands hidden dependencies. Cite tripwire membership when relevant: "Kept even though you didn't tick 'phone' — this service also backs the Add-Bluetooth-Device wizard, which you might use later."
 5. **Risky cleanup items get inline warnings.** "Skip if you might want anything back" for Recycle Bin, "can't be rolled back after" for Windows.old.
-6. **The "Things I need to ask about" section caps at 4 items.** If there are more genuinely ambiguous items, batch the extras: "I'll ask about 2 more small ones during setup." Never more than 4 visible in the preview.
+6. **Residual taste-decision items caps at 2.** With the activity checklist covering ~85% of decisions upfront, only genuine taste choices (lid behavior with no history, DNS provider) should survive. If more than 2 appear, use the module's safe default silently and log it in the final summary: "I used the safe defaults for X, Y, Z — /pc-cleaner undo reverts."
 7. **Numbers matter.** Free space freed, size of caches, count of apps. Not "reclaim disk space" — "reclaim 4.2 GB". Not "several apps" — "8 apps".
 8. **Never emit an empty section.** If bloat detected nothing to remove, drop the "Apps I noticed you don't use" section entirely. Same for every other section.
+9. **When checklist and forensics disagree, mention it visibly.** "Xbox app — you didn't tick 'gaming', but you launched it 12x last month. I'll keep it — trusting the launch history." Users appreciate the tool being transparent about its second-guessing.
 
 ### Handling "change something"
 
@@ -462,16 +487,19 @@ Modules must NOT recompute these; they read from `profile.json`.
 
 The orchestrator batches every module's decision logic into a single plan preview. AskUserQuestion is used only for:
 
-- **2 baseline questions** at run start (usage + tech level).
+- **1 baseline call** at run start — contains BOTH the usage question and the tech-level question. One interaction from the user's POV.
+- **1 activity checklist call** — contains 4 multi-select questions from `data/activity_checklist.json` (~16 checkboxes total). One interaction. This is the primary evidence source; dark mode, virtual desktops, Recall, and most other former "taste" questions get resolved here as direct checkbox signals.
 - **1 Apply/Change/Cancel gate** after the plan preview.
-- **0-4 taste-decision questions** for items no inference rule can decide (dark mode, DNS provider, lid behavior when no history, Recall). Hard cap: 4.
-- **1 optional "anything else?" free-form ask** for Level 3-4 users.
+- **0-2 residual taste-decision questions** — for items neither the checklist nor an inference rule can decide (rare: lid behavior when no historical data, DNS provider choice for Level 3-4). Hard cap: 2. Most runs have 0.
+- **1 optional "anything else?" free-form ask** for Level 3-4 users only.
 
-Total run maximum:
-- **Level 1 (clicker)**: 3 questions (2 baseline + 1 apply gate). No taste Q's shown.
-- **Level 2 (power user)**: 3-6 questions (add 1-3 taste Q's).
-- **Level 3-4 (technical/developer)**: 4-8 questions (add taste Q's + optional "anything else").
-- **`/pc-cleaner quick`**: 0 questions. All ask-gated items default to their safe-default value.
+Total run maximum from the user's POV (each = one prompt they see):
+- **Level 1 (clicker)**: 3 prompts (baseline / activity checklist / apply gate). No residual taste Q's.
+- **Level 2 (power user)**: 3-4 prompts.
+- **Level 3-4 (technical/developer)**: 4-5 prompts (adds residuals + "anything else").
+- **`/pc-cleaner quick`**: 1 prompt (activity checklist only, then auto-apply with safe defaults for everything else). Or 0 if `--yes` is added.
+
+Comparison to old flow: services module alone was 15 questions, total CORE run was 20-40. Now 3 prompts for the common case, 5 max for developers.
 
 Modules never invoke AskUserQuestion themselves. If a module doc lists Q1-Q15, those are **inference rules** the orchestrator reads at plan-build time — not questions asked in sequence. The per-module wording survives only as fallback copy if the orchestrator needs to drill into a single item during "Change something" branch.
 
