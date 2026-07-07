@@ -122,6 +122,8 @@ The `Explain more` branch prints: "Your WiFi and Bluetooth are on the same chip.
 
 ### After all questions, show the decision summary
 
+> **DEPRECATED under the batched orchestrator (SKILL.md, 2026-07-07).** In full `/pc-cleaner` runs, this per-module summary is absorbed into the unified plan preview — do NOT emit it. Kept below as reference for the single-module invocation `/pc-cleaner power` where a per-module summary still makes sense.
+
 ```
 Power / sleep tweaks — here's what I figured out:
 

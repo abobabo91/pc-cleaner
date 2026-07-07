@@ -159,6 +159,8 @@ For each remaining entry not covered above — an app the diagnose script found 
 
 ### After all questions, show the decision summary
 
+> **DEPRECATED under the batched orchestrator (SKILL.md, 2026-07-07).** In full `/pc-cleaner` runs, this per-module summary is absorbed into the unified plan preview — do NOT emit it. Kept below as reference for the single-module invocation `/pc-cleaner startup` where a per-module summary still makes sense.
+
 ```
 Autostart cleanup — here's what I figured out:
 

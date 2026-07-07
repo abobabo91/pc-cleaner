@@ -204,6 +204,8 @@ The questions, in the order they should be asked (skip any whose condition fails
 
 ### After all questions, show the decision summary
 
+> **DEPRECATED under the batched orchestrator (SKILL.md, 2026-07-07).** In full `/pc-cleaner` runs, this per-module summary is absorbed into the unified plan preview — do NOT emit it. Kept below as reference for the single-module invocation `/pc-cleaner services` where a per-module summary still makes sense.
+
 Format like a friendly recap before applying:
 
 ```
