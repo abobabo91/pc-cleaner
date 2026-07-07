@@ -1,26 +1,26 @@
 # pc-cleaner
 
-**Make your Windows 11 PC faster and cleaner. Ask like a friend, apply safely.**
+**Make your Windows 11 PC faster and cleaner. Two quick questions, one preview list, one Apply button.**
 
-Runs inside Claude Code, asks you plain-English questions about what you actually use, and cleans out the stuff you don't. Everything it changes gets saved as a "revert" file so you can undo any step.
+Runs inside Claude Code. It looks at your PC, figures out what you use vs what you don't, and shows you a clear list before changing anything. You either say "apply", or you tell it what to skip in plain English.
 
 ---
 
 ## What it does for you
 
-Removes the bloat that comes preinstalled with Windows — the Xbox apps, Cortana, Weather, News, Feedback Hub, Solitaire, Copilot ads in your Start menu — but **only the ones you actually don't use**. It asks you first, in plain English.
+Removes the bloat that comes preinstalled with Windows — the Xbox apps, Cortana, Weather, News, Feedback Hub, Solitaire, Copilot ads in your Start menu — but **only the ones you actually don't use**. It figures that out by checking when you last opened each one.
 
 Frees up disk space by deleting temporary files, browser caches, Discord/Slack/Zoom/VS Code caches. On a typical machine that's 500 MB to 5 GB back.
 
-Turns off Windows tracking, ads, activity history, and Bing search suggestions in the Start menu.
+Turns off Windows tracking, ads, activity history.
 
 Disables the apps that auto-start every time you turn on your computer but you never use.
 
-Fixes Windows 11's most-complained-about annoyances if you want (Widgets button, Copilot button, right-click menu). But it doesn't force any of these — it asks first.
+Fixes Windows 11's most-complained-about annoyances (Widgets button, Copilot button, right-click menu) — but shows you the change first so you can skip anything you actually want.
 
 For laptops with a known Bluetooth or crash problem, it can find the actual fix for your specific chip.
 
-**Everything is asked as "do you use this?", not "do you know what SMB is?".** If you don't know, there's always an "I'm not sure" option and the tool figures it out for you.
+**You don't answer 20 questions.** You answer 2 quick profile questions ("what do you use this PC for" + "how techy are you"), then look at a list, then say Apply. Total interaction: about 30 seconds of your attention.
 
 ## For non-technical users — how to actually run it
 
@@ -40,19 +40,31 @@ Once installed, every time you want to clean your PC:
 3. In that admin Terminal, type `claude` and press Enter to launch Claude Code.
 4. Type `/pc-cleaner` and press Enter.
 
-That's it. The tool will ask you about 5-10 questions total, all in plain English. Say what you use, say what you don't. It applies everything automatically and shows you a before/after summary at the end.
+That's it. Here's what happens:
 
-**It takes about 5 minutes.** You can stop at any time — nothing gets applied until you agree.
+- **The tool asks 2 quick questions** — what you use your PC for, and how technical you are. About 10 seconds.
+- **It looks at your PC** — reads which apps you have, when you last opened each one, what hardware you have. About 20 seconds.
+- **It shows you a list** — grouped as: apps you don't use, apps you DO use (kept), Windows features safe to turn off, cleanup items, small UI tweaks. Each item has a plain-English reason like "you never opened this" or "you have no SIM card slot".
+- **You look at the list and pick one:**
+  - **Apply everything** — done in about a minute.
+  - **Change something** — just type what to skip: "keep Skype" or "don't empty recycle bin". The list updates.
+  - **Cancel** — nothing changes.
+
+**Total interaction: about 30 seconds of reading + one click.** No mid-run interruptions.
 
 ## What if something goes wrong?
 
-Every change gets saved to a folder on your Desktop called `pc-cleaner-snapshots`. Each cleanup run is its own subfolder with a `revert.ps1` script inside. If you don't like a change:
+Every change gets saved to a folder on your Desktop called `pc-cleaner-snapshots`. To undo the whole last run, just type in Claude Code:
 
-- Open the folder (Explorer → Desktop → pc-cleaner-snapshots → the latest run).
-- Right-click the `revert.ps1` file → **Run with PowerShell**.
-- That change is undone.
+```
+/pc-cleaner undo
+```
 
-You can also just re-run `/pc-cleaner` and pick different answers.
+That's it. It finds the most recent run and rolls everything back — apps get reinstalled, services get re-enabled, UI tweaks go back to how they were. About 30 seconds.
+
+(Some things can't come back — temp files that were deleted are gone for good. That's normal for any cleanup tool. The tool tells you which items couldn't be reverted.)
+
+If you want to undo an older run, run `/pc-cleaner undo` and pick from the list of runs it shows you.
 
 ## What it does NOT do
 
