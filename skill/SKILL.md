@@ -25,7 +25,7 @@ If the user asked in natural language ("clean my PC", "make it faster") without 
 2. **Ask only when the decision is genuinely ambiguous.** If a category is unambiguously safe or unambiguously required for THIS machine, apply / skip without asking. Batch real MAYBEs into ≤4 grouped multi-select questions per module using AskUserQuestion. Front-load: gather all module questions once at the start of a full run, don't interrupt mid-flow.
 3. **Machine-aware first.** `profile` runs before everything. Every subsequent module branches on the profile. Warnings and defaults are targeted to real risk on this specific machine.
 4. **Explain every decision** in the run log. `[APPLY] <what> — reason: <why>`. No mystery meat.
-5. **Never touch tripwire services / settings.** See `data/services_tripwire.json`. If a user tries to force one via a flag, explain the risk and refuse without `--iknowwhatimdoing`.
+5. **Never touch tripwire services / settings.** See `data/services_tripwire.json`. Enforced at THREE layers: (1) Claude reasoning must not add a tripwire name to any plan; (2) `apply/services.ps1` refuses at runtime; (3) `verify/smoke.ps1` catches regressions post-apply. If a user tries to force one via a flag, explain the risk and refuse without `--iknowwhatimdoing`.
 6. **Additive optional modules only apply if opted in.** The user's iPhone doesn't get their apps rearranged because they said "clean my PC".
 7. **All user-facing questions must be plain English, informal.** Never use technical names in what the user reads. Describe things from the user's perspective ("Do you share files from this computer so other people on your WiFi can access them?"), not the technical name ("Enable SMB server?"). If a term is unavoidable, add a parenthetical explanation ("this is very rare", "used by only a few games"). No jargon: no `MDM`, `S3`, `HKCU`, `SubsystemVendor`, `LPS flags`, `Prefetch`, `stornvme`, etc. in the question text itself.
 8. **Conversational, one question at a time.** Ask like you'd talk to a non-technical friend, not like a form. Each MAYBE gets its own quick yes/no/"I'm not sure" question. Front-load hardware detection so items that can't apply (fingerprint on a machine with no biometric hardware, Windows VPN when OpenVPN is running, Comet when it isn't installed) never appear as questions. This keeps the actual number of questions low on any specific machine even though the module knows about a lot of things.
@@ -36,6 +36,10 @@ Every question offers three options:
 - **I'm not sure — figure it out for me** — trigger the inference rule
 
 **Every module doc must specify the inference rule for each question** — the exact PowerShell / registry check that produces YES or NO. Auto-inference is a hard contract, not "Claude figures it out."
+
+9. **Hidden UX dependency rule.** No question of the form "do you use feature X?" may make the disable decision for a service that backs multiple unrelated UX flows. These services belong in `services_tripwire.json` under the new schema (`{ reason, backs: [...] }`) and stay on Windows defaults regardless of user answers. Examples the seed session got wrong: `fdPHost` (backs BT pairing wizard + printer wizard + Miracast — not just casting), `CDPSvc` (backs BT pairing + Nearby Sharing + Quick Assist — not just Copilot), `MapsBroker` (backs Copilot location + Weather + Photos map view — not just the Maps app). When in doubt, put it in tripwire — false positives cost users nothing; a false negative silently breaks a Windows UX flow the user can't debug.
+
+10. **Post-apply UX smoke test.** After every module apply, the orchestrator calls `ps/verify/smoke.ps1` which runs `data/ux_smoke_tests.json`. Each test names a UX flow (BT pairing wizard, Add printer, Settings launch, Start search, notification delivery, MS account sign-in, Store app launch, audio device switch) and the services required for it. If any test FAILS, the orchestrator shows the failing flow + points at the last apply as the suspect + offers the revert command. `services.ps1` invokes it automatically; other modules invoke it via the orchestrator after they finish. The smoke test is READ-ONLY and takes <5s per run.
 
 After all questions in a module are answered, show the user a "here's what I decided" summary with what was checked, what was inferred, and what got disabled/kept. Let them override before applying.
 
@@ -96,8 +100,13 @@ Good vs bad examples:
    d. Ask the module's grouped MAYBE questions.
    e. Build plan JSON.
    f. Call `apply` script (elevated). Log everything.
-7. Run `benchmark` (after). Show diff table.
-8. Emit final summary: what was applied, what was skipped, snapshot folder, one-command revert.
+7. Run `ps/verify/smoke.ps1` (post-apply UX smoke test). If any FAIL:
+   - Print the failing flows and which required service(s) are in the wrong state.
+   - Name the module(s) whose apply.log mentions those services as the suspects.
+   - Offer the revert command for those modules.
+   Do NOT auto-revert — the user might have a reason to see the failure first.
+8. Run `benchmark` (after). Show diff table.
+9. Emit final summary: what was applied, what was skipped, snapshot folder, one-command revert, smoke test result.
 ```
 
 ## Elevation: get admin ONCE at the start, not per module

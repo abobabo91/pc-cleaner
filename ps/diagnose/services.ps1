@@ -17,18 +17,32 @@ $safeJson      = Join-Path $DataDir 'services_disable_safe.json'
 $tripwire = (Get-Content $tripwireJson  -Raw | ConvertFrom-Json).services
 $safe     = (Get-Content $safeJson      -Raw | ConvertFrom-Json).categories
 
-# Build a lookup: service name -> { verdict, reason, category }
+# Build a lookup: service name -> { verdict, reason, backs, category }
+# Tripwire schema is either legacy (string reason) or new (object with reason + backs).
 $defaults = @{}
 foreach ($p in $tripwire.PSObject.Properties) {
-    $defaults[$p.Name] = @{ verdict = 'KEEP-TRIPWIRE'; reason = $p.Value; category = 'tripwire' }
+    if ($p.Value -is [string]) {
+        $defaults[$p.Name] = @{ verdict = 'KEEP-TRIPWIRE'; reason = $p.Value; backs = @(); category = 'tripwire' }
+    } else {
+        $defaults[$p.Name] = @{
+            verdict  = 'KEEP-TRIPWIRE'
+            reason   = $p.Value.reason
+            backs    = @($p.Value.backs)
+            category = 'tripwire'
+        }
+    }
 }
 foreach ($cat in $safe.PSObject.Properties) {
     $catName    = $cat.Name
     $catData    = $cat.Value
+    if ($catName -eq '_comment') { continue }
     foreach ($svc in $catData.services.PSObject.Properties) {
+        # Don't let disable_safe silently override a tripwire entry (belt-and-suspenders).
+        if ($defaults.ContainsKey($svc.Name) -and $defaults[$svc.Name].verdict -eq 'KEEP-TRIPWIRE') { continue }
         $defaults[$svc.Name] = @{
             verdict  = 'DISABLE-SAFE'
             reason   = "$catName - $($svc.Value)"
+            backs    = @()
             category = $catName
         }
     }
@@ -53,6 +67,7 @@ $rows = foreach ($s in $all) {
         StartName    = $s.StartName
         Verdict      = $d.verdict
         Reason       = $d.reason
+        Backs        = $d.backs
         Category     = $d.category
     }
 }

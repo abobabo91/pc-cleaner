@@ -1,34 +1,293 @@
 {
-  "_comment": "Services that MUST NOT be disabled. Refuse without --iknowwhatimdoing. Include the reason for each.",
+  "_comment": "Services that MUST NOT be disabled. Enforced by ps/apply/services.ps1 — will refuse without --iknowwhatimdoing regardless of what the plan JSON says. Two schemas accepted for backwards-compat: (a) legacy string value = reason only; (b) object with { reason, backs, addedAt }. New entries should use (b). 'backs' lists the UX flows / features that break if this service is disabled — critical for the 'hidden UX dependency' class of services (see incident 2026-07-07 in knowledge_base).",
   "services": {
-    "RpcSs":              "Remote Procedure Call — the entire OS talks over this",
-    "DcomLaunch":         "DCOM Server Process Launcher — RPC dependency",
-    "RpcEptMapper":       "RPC Endpoint Mapper — RPC dependency",
-    "PlugPlay":           "Plug and Play — no devices come online without it",
-    "Power":              "Power management — battery + throttling controls",
-    "EventLog":           "Windows Event Log — cascading failures if killed",
-    "Winmgmt":            "WMI — everything MDT/MSFT-management-adjacent uses this",
-    "gpsvc":              "Group Policy Client — login lockout if disabled",
-    "LSM":                "Local Session Manager — user sessions",
-    "Themes":             "Visual styles — logon hangs without it",
-    "ProfSvc":            "User Profile Service — profile load failure = no login",
-    "SamSs":              "Security Accounts Manager — SAM database",
-    "CryptSvc":           "Cryptographic Services — WU + code signing + TLS",
-    "BFE":                "Base Filtering Engine — required by Windows Firewall",
-    "MpsSvc":             "Windows Firewall — do not disable, add rules instead",
-    "LanmanWorkstation":  "SMB client — needed to access shares OR your own machine's admin shares",
-    "nsi":                "Network Store Interface — networking metadata",
-    "Dhcp":               "DHCP client — you'll lose your IP",
-    "Dnscache":           "DNS client cache — DNS still works but Chrome/Edge misbehave",
-    "NlaSvc":             "Network Location Awareness — firewall profile selection",
-    "AudioSrv":           "Windows Audio — mute everything if disabled",
-    "AudioEndpointBuilder": "Audio endpoint enumeration — Windows Audio dependency",
-    "UserManager":        "User session broker",
-    "Schedule":           "Task Scheduler — your automation dies without it",
-    "TrustedInstaller":   "Windows Modules Installer — WU + optional features",
-    "wuauserv":           "Windows Update — do not disable, use policy to control instead",
-    "sppsvc":             "Software Protection — activation. Shows Auto/Stopped normally; that's correct.",
-    "vaultsvc":           "Credential Manager — saved passwords",
-    "KeyIso":             "CNG Key Isolation — keys used by BitLocker etc"
+    "RpcSs": {
+      "reason": "Remote Procedure Call — the entire OS talks over this",
+      "backs": ["Every Windows service that talks to another", "Explorer", "Task Manager", "Settings app"]
+    },
+    "DcomLaunch": {
+      "reason": "DCOM Server Process Launcher — RPC dependency",
+      "backs": ["RPC infrastructure"]
+    },
+    "RpcEptMapper": {
+      "reason": "RPC Endpoint Mapper — RPC dependency",
+      "backs": ["RPC infrastructure"]
+    },
+    "PlugPlay": {
+      "reason": "Plug and Play — no devices come online without it",
+      "backs": ["Every device driver load", "USB hotplug", "BT + WiFi radio bring-up"]
+    },
+    "Power": {
+      "reason": "Power management — battery + throttling controls",
+      "backs": ["Sleep/hibernate", "Battery indicator", "Modern Standby wake"]
+    },
+    "EventLog": {
+      "reason": "Windows Event Log — cascading failures if killed",
+      "backs": ["Every service that logs (all of them)", "WU history", "audit trails"]
+    },
+    "Winmgmt": {
+      "reason": "WMI — everything MDT/MSFT-management-adjacent uses this",
+      "backs": ["Get-CimInstance / Get-WmiObject", "Task Scheduler queries", "sensor readings"]
+    },
+    "gpsvc": {
+      "reason": "Group Policy Client — login lockout if disabled",
+      "backs": ["Login flow", "policy application on any account (even standalone)"]
+    },
+    "LSM": {
+      "reason": "Local Session Manager — user sessions",
+      "backs": ["Login", "Fast user switching", "RDP host"]
+    },
+    "Themes": {
+      "reason": "Visual styles — logon hangs without it",
+      "backs": ["Explorer visuals", "logon flow"]
+    },
+    "ProfSvc": {
+      "reason": "User Profile Service — profile load failure = no login",
+      "backs": ["Login", "roaming profiles"]
+    },
+    "SamSs": {
+      "reason": "Security Accounts Manager — SAM database",
+      "backs": ["Local account auth", "SID resolution"]
+    },
+    "CryptSvc": {
+      "reason": "Cryptographic Services — WU + code signing + TLS",
+      "backs": ["Windows Update", "SmartScreen", "TLS handshakes", "signed installer verification"]
+    },
+    "BFE": {
+      "reason": "Base Filtering Engine — required by Windows Firewall",
+      "backs": ["Windows Firewall", "IPsec", "WFP filters (many AV products use it)"]
+    },
+    "MpsSvc": {
+      "reason": "Windows Firewall — do not disable, add rules instead",
+      "backs": ["Inbound protection", "app-specific network rules"]
+    },
+    "LanmanWorkstation": {
+      "reason": "SMB client — needed to access shares OR your own machine's admin shares",
+      "backs": ["\\\\server\\share access", "\\\\localhost\\c$ (backup tools)", "Homegroup remnants"]
+    },
+    "nsi": {
+      "reason": "Network Store Interface — networking metadata",
+      "backs": ["IP stack config", "TCP/IP settings persistence"]
+    },
+    "Dhcp": {
+      "reason": "DHCP client — you'll lose your IP",
+      "backs": ["Automatic IP assignment on any DHCP network (~everyone)"]
+    },
+    "Dnscache": {
+      "reason": "DNS client cache — DNS still works but Chrome/Edge misbehave",
+      "backs": ["DNS resolution caching", "Chrome/Edge require it running (they refuse to start otherwise)"]
+    },
+    "NlaSvc": {
+      "reason": "Network Location Awareness — firewall profile selection",
+      "backs": ["Public/Private/Domain profile switching", "network icon in tray"]
+    },
+    "AudioSrv": {
+      "reason": "Windows Audio — mute everything if disabled",
+      "backs": ["All audio playback and capture"]
+    },
+    "AudioEndpointBuilder": {
+      "reason": "Audio endpoint enumeration — Windows Audio dependency",
+      "backs": ["Audio device switching", "BT audio device appearance"]
+    },
+    "UserManager": {
+      "reason": "User session broker",
+      "backs": ["Login flow", "per-user service instantiation (all _bd465 services)"]
+    },
+    "Schedule": {
+      "reason": "Task Scheduler — your automation dies without it",
+      "backs": ["All scheduled tasks", "Windows maintenance schedule"]
+    },
+    "TrustedInstaller": {
+      "reason": "Windows Modules Installer — WU + optional features",
+      "backs": ["Windows Update install phase", "DISM operations", "optional features"]
+    },
+    "wuauserv": {
+      "reason": "Windows Update — do not disable, use policy to control instead",
+      "backs": ["Windows Update", "security patch delivery", "Defender definition updates"]
+    },
+    "sppsvc": {
+      "reason": "Software Protection — activation. Shows Auto/Stopped normally; that's correct.",
+      "backs": ["License validation", "activation state"]
+    },
+    "vaultsvc": {
+      "reason": "Credential Manager — saved passwords",
+      "backs": ["Saved Windows credentials", "Chromium password prompts on some flows"]
+    },
+    "KeyIso": {
+      "reason": "CNG Key Isolation — keys used by BitLocker etc",
+      "backs": ["BitLocker", "TPM key operations", "signing/decryption via CNG"]
+    },
+
+    "CDPSvc": {
+      "reason": "Connected Devices Platform Service — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Windows 11 Bluetooth 'Add device' wizard (silently fails to find anything without it)",
+        "Nearby Sharing",
+        "Quick Assist",
+        "Phone Link discovery",
+        "Cross-device clipboard"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was disabled by services module Q11 (Copilot/UWP) inference. Broke BT pairing wizard on the seed machine."
+    },
+    "fdPHost": {
+      "reason": "Function Discovery Provider Host — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Windows 11 Bluetooth 'Add device' wizard (window closes on click without it — this is the main culprit for the 2026-07-07 BT pairing incident)",
+        "Add Printer wizard (WSD network printers)",
+        "DLNA server discovery",
+        "Miracast display discovery",
+        "Any 'Add a device' flow in Settings"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was in Q6 (Casting to TV) Controls list. Answering 'no to casting' silently killed the BT pairing wizard because the same service backs both."
+    },
+    "FDResPub": {
+      "reason": "Function Discovery Resource Publication — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Outgoing device advertisement (this PC appears in others' 'Add device' lists)",
+        "Miracast source",
+        "WSD network share advertisement",
+        "Some BT LE discovery flows"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was in services_disable_safe legacy_networking group — silently disabled every run. Moved to tripwire."
+    },
+    "NcdAutoSetup": {
+      "reason": "Network Connected Devices Auto-Setup — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Wireless device onboarding wizard (WPS-adjacent flows)",
+        "Some BT device pairing flows",
+        "Xbox controller wireless pairing"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was miscategorized under enterprise_mdm. It backs consumer device onboarding too."
+    },
+    "SSDPSRV": {
+      "reason": "SSDP Discovery — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "UPnP media renderer discovery (Cast to Device menu in Movies & TV / Groove)",
+        "Miracast display picker",
+        "Some BT+WiFi combo device onboarding flows"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was in Q6 Controls list AND services_disable_safe legacy_networking. Double-disabled."
+    },
+    "upnphost": {
+      "reason": "UPnP Device Host — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "This PC responding as a UPnP endpoint (Xbox Media Player finds it, phone finds it as DLNA target)",
+        "Windows Media Player DLNA server",
+        "Miracast source advertisement"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was in services_disable_safe legacy_networking. Blindly disabled every run."
+    },
+    "WFDSConMgrSvc": {
+      "reason": "Wi-Fi Direct Services Connection Manager — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Miracast connection setup",
+        "Wi-Fi Direct printer connection (many modern printers)",
+        "Some BT+WiFi handoff flows during pairing"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was in Q6 Controls list."
+    },
+    "PhoneSvc": {
+      "reason": "Phone Service — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Bluetooth hands-free profile (BT audio devices with mic — headsets, car kits)",
+        "SMS/MMS on cellular tablets",
+        "Phone Link message sync"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was assumed-disable for non-cellular laptops. But BT hands-free needs it — every BT headset with a mic uses it."
+    },
+    "DeviceAssociationService": {
+      "reason": "Device pairing UI backend — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "'Add a device' wizard state management",
+        "BT pairing confirmation dialog",
+        "USB device 'Autoplay' triggers"
+      ],
+      "addedAt": "2026-07-07"
+    },
+    "MapsBroker": {
+      "reason": "Downloaded Maps Manager — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Maps app",
+        "Cortana/Copilot location-based queries",
+        "Weather app location detection",
+        "Photos app map view for geotagged photos"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was in services_disable_safe windows_features_off_by_default. Not asked about, silently disabled. Copilot/Weather users get broken location behavior with no clue why."
+    },
+    "MessagingService": {
+      "reason": "Messaging Service — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Phone Link SMS relay",
+        "Your Phone MMS attachments",
+        "Cross-device Skype legacy on some builds"
+      ],
+      "addedAt": "2026-07-07",
+      "incident": "Was labeled 'SMS (Phone Link)' in services_disable_safe as if optional. Phone Link is a heavily-used feature and users don't map 'do you use Copilot' → SMS relay."
+    },
+    "WpnService": {
+      "reason": "Windows Push Notifications System Service — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "All UWP/store-app notifications",
+        "Teams desktop notifications",
+        "OneDrive sync notifications",
+        "Focus Assist gating"
+      ],
+      "addedAt": "2026-07-07"
+    },
+    "WSService": {
+      "reason": "Windows Store license — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Every Store app launch (license check)",
+        "Xbox app",
+        "Store install/update"
+      ],
+      "addedAt": "2026-07-07"
+    },
+    "LicenseManager": {
+      "reason": "Windows License Manager — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Store apps",
+        "Windows Subsystem for Linux app-store install",
+        "Digital license retrieval"
+      ],
+      "addedAt": "2026-07-07"
+    },
+    "AppXSvc": {
+      "reason": "Appx Deployment Service — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Every UWP app install/update/launch (starts on-demand)",
+        "Settings app UWP handlers",
+        "Store app operations"
+      ],
+      "addedAt": "2026-07-07"
+    },
+    "StateRepository": {
+      "reason": "State Repository Service — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Appx package state (which apps are installed for whom)",
+        "Start menu tile layout persistence",
+        "Settings app configuration reads"
+      ],
+      "addedAt": "2026-07-07"
+    },
+    "TokenBroker": {
+      "reason": "Web Account Manager token broker — hidden UX dep, added 2026-07-07",
+      "backs": [
+        "Microsoft account sign-in in Settings",
+        "OneDrive sign-in",
+        "Store sign-in",
+        "Any modern-auth prompt in a UWP context"
+      ],
+      "addedAt": "2026-07-07"
+    }
   }
 }

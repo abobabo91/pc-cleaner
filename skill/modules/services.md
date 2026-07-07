@@ -9,6 +9,18 @@ At the end of this module the user has:
 4. The user's MAYBEs resolved in ≤4 grouped multi-select questions and applied.
 5. A `revert.ps1` in the snapshot dir that undoes everything.
 
+## Hard rule: never disable a tripwire service
+
+Every service listed in `data/services_tripwire.json` is **KEEP-TRIPWIRE** and never disabled by this flow. Even if a question below lists a tripwire service in its `Controls` line (some Controls lists mention "keep alive" style services for context), the apply script REFUSES to disable tripwire services regardless of the plan JSON. This is enforced at three layers:
+
+1. `diagnose/services.ps1` labels tripwire services `KEEP-TRIPWIRE` and includes their `backs` (list of UX flows they support).
+2. The Claude reasoning layer must not add a tripwire name to `plan.disable`. If unsure, check the tripwire JSON.
+3. `apply/services.ps1` refuses to disable any tripwire name at apply time (belt-and-suspenders), logs it as `BLOCK`, and emits `blocked-tripwire.json` in the snapshot dir.
+
+Tripwire is not just "system-critical" (Rpc, DHCP). It also includes **hidden UX dependency** services — ones that back multiple unrelated features so no single user question can decide their fate. Examples: `fdPHost` backs the Bluetooth pairing wizard AND the printer setup wizard AND Miracast. `CDPSvc` backs Nearby Sharing AND Quick Assist AND the "Add device" wizard. These stay on Windows defaults, always.
+
+**If a `Controls:` line below mentions a tripwire service, treat that mention as informational — the service is not eligible for change.**
+
 ## Flow
 
 ### 1. Diagnose
@@ -97,7 +109,7 @@ The questions, in the order they should be asked (skip any whose condition fails
 
 *"I'm not sure" inference:* → NO. If a Miracast display was recently connected (check event log for `PLAYTO` or `Miracast` events), → YES.
 
-*Controls:* `WFDSConMgrSvc`, `fdPHost`, `SSDPSRV`.
+*Controls:* (none — all previously-listed services here are tripwire: `WFDSConMgrSvc`, `fdPHost`, `SSDPSRV` back multiple unrelated flows including BT pairing. See 2026-07-07 incident. This question is now informational only; nothing gets disabled based on the answer. Kept in the flow so the user profile still reflects casting behavior for other modules.)
 
 ---
 
@@ -144,7 +156,7 @@ The questions, in the order they should be asked (skip any whose condition fails
 
 *"I'm not sure" inference:* UserAssist launch counts. Any of them launched in last 90 days → YES. Otherwise → NO.
 
-*Controls:* `MicrosoftCopilotElevationService`, plus per-user Mail/Calendar template services.
+*Controls:* `MicrosoftCopilotElevationService`. (Note: previous wording said "plus per-user Mail/Calendar template services" — that fuzzy wording invited disabling `MessagingService` and `CDPSvc` on the seed machine, which broke BT pairing. Both are now tripwire. Do not add per-user Mail/Calendar services here — they are covered by the `windows_features_off_by_default` category in `services_disable_safe.json` (`UnistoreSvc`, `UserDataSvc`, `PimIndexMaintenanceSvc`) which never touches cross-device or messaging services.)
 
 ---
 

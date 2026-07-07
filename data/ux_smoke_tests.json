@@ -1,0 +1,89 @@
+{
+  "_comment": "Post-apply UX smoke tests. Run after every module apply to catch hidden-UX-dep regressions where a service change silently breaks a Windows UX flow. Each test names the flow, a probe (service-state check, ms-settings URI, or PS check), the services that must be running/enabled for it to work, and remediation. If a probe fails, the orchestrator points at the last module that changed any of the listed services. See 2026-07-07 BT pairing incident in knowledge_base.",
+  "tests": [
+    {
+      "id": "bt_pairing_wizard",
+      "flow": "Settings > Bluetooth & devices > Add device > Bluetooth (discovery)",
+      "requires": {
+        "servicesRunningOrManual": ["bthserv", "fdPHost", "FDResPub", "CDPSvc", "DeviceAssociationService"],
+        "servicesNotDisabled": ["SSDPSRV", "upnphost", "WFDSConMgrSvc", "PhoneSvc", "NcdAutoSetup"]
+      },
+      "probe": {
+        "type": "service_state_check",
+        "note": "Full end-to-end probe would require launching ms-settings:bluetooth and inspecting the wizard, which we can't automate reliably. Service-state check is the closest deterministic signal."
+      },
+      "onFailure": "The Windows 11 'Add device' Bluetooth wizard will silently close on click. Enable the required services (Set-Service <name> -StartupType Manual; Start-Service <name>). Restart bthserv."
+    },
+    {
+      "id": "add_printer_wizard_discovery",
+      "flow": "Settings > Printers & scanners > Add device - network discovery back-end",
+      "note": "Only checks the shared-discovery back-end. Spooler being Disabled is legitimate when user answered NO to printing in Q1. If user prints, the printer_scanner category correctly avoids disabling Spooler.",
+      "requires": {
+        "servicesRunningOrManual": ["fdPHost", "FDResPub"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "Network printer discovery in the Add printer wizard is broken. fdPHost/FDResPub are tripwire - if Disabled, something bypassed the tripwire enforcement. Restore to Manual."
+    },
+    {
+      "id": "settings_app_launches",
+      "flow": "Settings app launches on click",
+      "requires": {
+        "servicesRunningOrManual": ["AppXSvc", "StateRepository", "UserManager", "TokenBroker", "WpnService", "CDPSvc"]
+      },
+      "probe": {
+        "type": "process_check_after_deep_link",
+        "uri": "ms-settings:bluetooth",
+        "expectedProcess": "SystemSettings",
+        "timeoutSeconds": 10,
+        "note": "Launch the URI and check within timeout whether SystemSettings.exe is running. If URI fires but process doesn't start, the Settings UWP stack is broken (Appx package missing or dependency service disabled)."
+      },
+      "onFailure": "Settings app deep-links silently fail. Check AppXSvc + StateRepository + TokenBroker. If services are fine, run: Get-AppxPackage -AllUsers Microsoft.Windows.ImmersiveControlPanel - if missing, restore via DISM /Online /Cleanup-Image /RestoreHealth then re-register with Add-AppxPackage."
+    },
+    {
+      "id": "start_menu_search",
+      "flow": "Start > type filename > file opens",
+      "note": "Skipped as FAIL when user explicitly answered YES to Q12 (turn off WSearch). Orchestrator drops this test from the run in that case. Kept in the suite because most users don't disable WSearch and a silent regression is bad.",
+      "requires": {
+        "servicesRunningOrManual": ["WSearch"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "Start menu returns 'no results' or takes 30+ seconds. Re-enable WSearch (only disable if user explicitly answered yes to Q12 AND has 'Everything' installed)."
+    },
+    {
+      "id": "notifications_deliver",
+      "flow": "Any Teams / Slack / OneDrive notification arrives",
+      "requires": {
+        "servicesRunningOrManual": ["WpnService", "WpnUserService", "UserManager"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "Toast notifications silently drop. Re-enable WpnService."
+    },
+    {
+      "id": "ms_account_signin",
+      "flow": "Sign in to Microsoft account in Settings / Store / OneDrive",
+      "requires": {
+        "servicesRunningOrManual": ["TokenBroker", "wlidsvc", "CDPSvc"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "Sign-in dialog either doesn't appear or fails with generic error. Re-enable TokenBroker + wlidsvc."
+    },
+    {
+      "id": "store_app_launches",
+      "flow": "Any UWP / Store app launches (Photos, Calc, Store, etc.)",
+      "requires": {
+        "servicesRunningOrManual": ["AppXSvc", "ClipSVC", "LicenseManager", "StateRepository"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "Store apps refuse to open or immediately close. Re-enable all listed services to Manual."
+    },
+    {
+      "id": "audio_device_switch",
+      "flow": "Switch audio output from taskbar volume flyout",
+      "requires": {
+        "servicesRunningOrManual": ["AudioSrv", "AudioEndpointBuilder", "MMCSS"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "Audio device list is empty or won't switch. AudioSrv/AudioEndpointBuilder are tripwire - investigate why they're not running."
+    }
+  ]
+}

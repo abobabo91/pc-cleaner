@@ -1,5 +1,5 @@
 {
-  "_comment": "Services safe to disable for a typical solo-user Windows 11 machine (not domain-joined, no enterprise MDM, no cellular modem, no printer, no gaming, no fax). Each entry: name, reason.",
+  "_comment": "Services safe to disable for a typical solo-user Windows 11 machine (not domain-joined, no enterprise MDM, no cellular modem, no printer, no gaming, no fax). Each entry: name, reason. NOTE: any service with hidden UX dependencies (backs multiple unrelated features) MUST live in services_tripwire.json, not here. See incident 2026-07-07 in knowledge_base — the legacy_networking category previously here silently killed the Bluetooth pairing wizard.",
   "categories": {
     "cellular_modem": {
       "reason_group": "No cellular modem in most laptops",
@@ -23,30 +23,26 @@
         "dmwappushservice":    "WAP push (MDM channel)",
         "wisvc":               "Windows Insider",
         "workfolderssvc":      "Work Folders sync",
-        "NcdAutoSetup":        "Network Connected Devices Auto-Setup",
         "MSiSCSI":             "iSCSI initiator",
         "IpxlatCfgSvc":        "IPv6 464XLAT for cellular carriers",
         "SNMPTrap":            "SNMP trap receiver",
         "WEPHOSTSVC":          "3rd-party FDE broker"
       }
     },
-    "legacy_networking": {
-      "reason_group": "Legacy P2P/discovery protocols",
+    "legacy_p2p": {
+      "reason_group": "Legacy peer-to-peer / homegroup protocols only (device discovery moved to tripwire — see 2026-07-07 incident)",
       "services": {
-        "wcncsvc":     "Windows Connect Now (WPS)",
-        "lltdsvc":     "Link-Layer Topology Discovery Mapper",
-        "FDResPub":    "Function Discovery Resource Publication",
-        "upnphost":    "UPnP Device Host",
-        "QWAVE":       "Quality Windows Audio Video Experience (QoS)",
-        "p2pimsvc":    "Peer Networking Identity Manager (PNRP)",
+        "lltdsvc":     "Link-Layer Topology Discovery Mapper (only used by the old 'Network Map' feature in Win7)",
+        "QWAVE":       "Quality Windows Audio Video Experience (QoS) — never used on modern consumer setups",
+        "p2pimsvc":    "Peer Networking Identity Manager (PNRP) — HomeGroup era",
         "p2psvc":      "Peer Networking Grouping (HomeGroup)",
         "PNRPAutoReg": "PNRP Machine Name Publication",
         "PNRPsvc":     "Peer Name Resolution Protocol",
-        "ALG":         "Application Layer Gateway (ICS)",
-        "TapiSrv":     "Telephony API",
-        "AJRouter":    "AllJoyn IoT mesh",
-        "WebClient":   "WebDAV client",
-        "SstpSvc":     "SSTP VPN (built-in)",
+        "ALG":         "Application Layer Gateway (only used by Internet Connection Sharing NAT)",
+        "TapiSrv":     "Telephony API (dial-up modem era)",
+        "AJRouter":    "AllJoyn IoT mesh (dead protocol)",
+        "WebClient":   "WebDAV client (some SharePoint drag-drop uses it — flag)",
+        "SstpSvc":     "SSTP VPN (built-in) — only if user answered NO to Windows built-in VPN",
         "RasAuto":     "Remote Access Auto Connection"
       }
     },
@@ -66,7 +62,6 @@
         "NaturalAuthentication": "Enterprise Dynamic Lock",
         "WalletService":         "Wallet/Passes UWP",
         "AarSvc":                "Agent Activation Runtime (Cortana era)",
-        "MessagingService":      "SMS/messaging (Phone Link)",
         "PimIndexMaintenanceSvc":"People/Contacts index",
         "UnistoreSvc":           "UWP Mail/People/Calendar store",
         "UserDataSvc":           "UWP Mail/People/Calendar access",
@@ -76,7 +71,6 @@
         "TroubleshootingSvc":    "Auto-run MS troubleshooters",
         "WpcMonSvc":             "Parental Controls",
         "GraphicsPerfSvc":       "Xbox Game Bar GPU counters",
-        "MapsBroker":            "Downloaded Maps",
         "tzautoupdate":          "Auto Time Zone from location",
         "AxInstSV":              "ActiveX Installer (IE)",
         "embeddedmode":          "Embedded/IoT mode",
