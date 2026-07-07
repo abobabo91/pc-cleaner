@@ -4,7 +4,8 @@
 
 param(
     [Parameter(Mandatory=$true)][string]$Plan,
-    [string]$SnapshotDir
+    [string]$SnapshotDir,
+    [switch]$IKnowWhatImDoing
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,11 +18,28 @@ $log = Join-Path $SnapshotDir 'apply.log'
 $planData = Get-Content $Plan -Raw | ConvertFrom-Json
 $keys     = @($planData.keys)
 
+# ask_user category enforcement — added 2026-07-07. Keys whose category is in
+# explorer_keys.json notes.ask_user (classic_menu, file_visibility, theme,
+# chat_ui, virtual_desktops) must have confirmed:true. Prevents silent hide of
+# the Chat/Teams icon and Task View button.
+$sourceJson = Join-Path $PSScriptRoot '..\..\data\explorer_keys.json'
+$askCategories = @()
+if (Test-Path $sourceJson) {
+    $src = Get-Content $sourceJson -Raw | ConvertFrom-Json
+    $askCategories = @($src.notes.ask_user)
+}
+$blockedKeys = New-Object System.Collections.Generic.List[string]
+
 $snap = Join-Path $SnapshotDir 'snapshot.json'
 $originalStates = New-Object System.Collections.Generic.List[object]
 $reverts = New-Object System.Collections.Generic.List[string]
 
 foreach ($k in $keys) {
+    if ($k.category -and ($askCategories -contains $k.category) -and -not $k.confirmed -and -not $IKnowWhatImDoing) {
+        Write-Log $log 'BLOCK' "$($k.path) $($k.name) - category '$($k.category)' is in ask_user list; missing confirmed:true. Skipping."
+        $blockedKeys.Add("$($k.category):$($k.name)")
+        continue
+    }
     $original = $null
     $existedBefore = $false
     if (Test-Path $k.path) {
@@ -59,6 +77,13 @@ foreach ($k in $keys) {
 }
 
 $originalStates | ConvertTo-Json | Set-Content $snap -Encoding UTF8
+
+if ($blockedKeys.Count -gt 0) {
+    $blockedJson = Join-Path $SnapshotDir 'blocked-ask-user.json'
+    $blockedKeys | ConvertTo-Json | Set-Content -Path $blockedJson -Encoding UTF8
+    Write-Host ""
+    Write-Host "Skipped $($blockedKeys.Count) ask_user key(s) missing confirmation: $($blockedKeys -join ', ')" -ForegroundColor Yellow
+}
 
 # Signal to orchestrator that Explorer restart is needed at end of run
 $runStateFile = Join-Path (Split-Path $SnapshotDir -Parent) 'run-state.json'

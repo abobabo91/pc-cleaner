@@ -10,7 +10,8 @@
 
 param(
     [Parameter(Mandatory=$true)][string]$Plan,
-    [string]$SnapshotDir
+    [string]$SnapshotDir,
+    [switch]$IKnowWhatImDoing
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,12 +25,29 @@ $log = Join-Path $SnapshotDir 'apply.log'
 $planData = Get-Content $Plan -Raw | ConvertFrom-Json
 $keys     = @($planData.keys)
 
+# ask_user category enforcement — added 2026-07-07 after audit. Keys whose
+# category is in privacy_keys.json notes.ask_user (recall, search_web, location,
+# edge_tracking) must have confirmed:true in the plan entry. Prevents silent
+# disable of Windows Recall / Bing web search / etc.
+$sourceJson = Join-Path $PSScriptRoot '..\..\data\privacy_keys.json'
+$askCategories = @()
+if (Test-Path $sourceJson) {
+    $src = Get-Content $sourceJson -Raw | ConvertFrom-Json
+    $askCategories = @($src.notes.ask_user)
+}
+$blockedKeys = New-Object System.Collections.Generic.List[string]
+
 $snap = Join-Path $SnapshotDir 'snapshot.json'
 $originalStates = New-Object System.Collections.Generic.List[object]
 
 $reverts = New-Object System.Collections.Generic.List[string]
 
 foreach ($k in $keys) {
+    if ($k.category -and ($askCategories -contains $k.category) -and -not $k.confirmed -and -not $IKnowWhatImDoing) {
+        Write-Log $log 'BLOCK' "$($k.path) $($k.name) - category '$($k.category)' is in ask_user list; missing confirmed:true. Skipping."
+        $blockedKeys.Add("$($k.category):$($k.name)")
+        continue
+    }
     # Capture original
     $original = $null
     $existedBefore = $false
@@ -60,6 +78,13 @@ foreach ($k in $keys) {
 }
 
 $originalStates | ConvertTo-Json | Set-Content $snap -Encoding UTF8
+
+if ($blockedKeys.Count -gt 0) {
+    $blockedJson = Join-Path $SnapshotDir 'blocked-ask-user.json'
+    $blockedKeys | ConvertTo-Json | Set-Content -Path $blockedJson -Encoding UTF8
+    Write-Host ""
+    Write-Host "Skipped $($blockedKeys.Count) ask_user key(s) missing confirmation: $($blockedKeys -join ', ')" -ForegroundColor Yellow
+}
 
 # Emit revert script
 $revertScript = Join-Path $SnapshotDir 'revert.ps1'

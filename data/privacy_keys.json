@@ -189,7 +189,8 @@
     }
   ],
   "notes": {
-    "ask_user": ["location", "edge_tracking"],
-    "apply_silently": ["telemetry", "ad_id", "activity_history", "explorer_ads", "search_web", "wifi_analytics", "copilot", "recall"]
+    "ask_user": ["location", "edge_tracking", "search_web", "recall"],
+    "apply_silently": ["telemetry", "ad_id", "activity_history", "explorer_ads", "wifi_analytics", "copilot"],
+    "reasoning": "search_web moved to ask 2026-07-07 because BingSearchEnabled=0 silently removes web results from Start menu search — users who deliberately search the web from Start (many do) lose that with no clue why. recall moved to ask because Copilot+ PC owners may have enrolled deliberately; silent disable regresses their setup. copilot stays silent because Windows Copilot is a discrete side-panel feature nobody uses accidentally. wifi_analytics stays silent because it's carrier-Wi-Fi-Sense-opt-in and never touches Wi-Fi you connected to yourself."
   }
 }

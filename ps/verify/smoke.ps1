@@ -34,6 +34,53 @@ $results = New-Object System.Collections.Generic.List[object]
 foreach ($t in $tests) {
     $failures = New-Object System.Collections.Generic.List[string]
 
+    # Check pathExists (path-existence smoke test)
+    if ($t.requires.pathExists) {
+        $p = [Environment]::ExpandEnvironmentVariables($t.requires.pathExists)
+        if (-not (Test-Path -LiteralPath $p)) {
+            $failures.Add("PATH-MISSING: expected path exists: $p")
+        }
+    }
+
+    # Check pathExistsUnlessMissingAtStart — path-check that skips if the path never existed
+    # (encoded via a sentinel marker file we don't create; caller passes existsAtStart=$true via env)
+    if ($t.requires.pathExistsUnlessMissingAtStart) {
+        $p = [Environment]::ExpandEnvironmentVariables($t.requires.pathExistsUnlessMissingAtStart)
+        # We can't know pre-run state after the run without a snapshot, so this test only
+        # FAILS if the path is in the "protected list" AND missing. Simplification: skip
+        # this class of check when standalone-invoked; the orchestrator will pass
+        # -PreRunSnapshotDir to a future version to cross-reference. For now, no-op.
+    }
+
+    # Check powercfg lid action
+    if ($t.requires.powercfgQueryNotBoth) {
+        $q = $t.requires.powercfgQueryNotBoth
+        try {
+            $out = (& powercfg /query SCHEME_CURRENT $q.subgroup $q.setting 2>$null) -join "`n"
+            $ac = $null; $dc = $null
+            if ($out -match 'Current AC Power Setting Index:\s*0x([0-9a-fA-F]+)') { $ac = [Convert]::ToInt64($Matches[1], 16) }
+            if ($out -match 'Current DC Power Setting Index:\s*0x([0-9a-fA-F]+)') { $dc = [Convert]::ToInt64($Matches[1], 16) }
+            if ($null -eq $ac -and $null -eq $dc) {
+                # No values found - probably not a laptop (no LIDACTION), so skip silently
+            } elseif ($null -ne $ac -and $null -ne $dc -and $ac -eq $q.acDcBothMustNotEqual -and $dc -eq $q.acDcBothMustNotEqual) {
+                $failures.Add("POWERCFG-BOTH-EQ: $($q.subgroup)/$($q.setting) is $($q.acDcBothMustNotEqual) on both AC AND DC (silent 'do nothing' state).")
+            }
+        } catch {
+            $failures.Add("POWERCFG-QUERY-FAILED: $($_.Exception.Message)")
+        }
+    }
+
+    # Check DNS resolution
+    if ($t.requires.resolveDnsHost) {
+        $dnsHost = $t.requires.resolveDnsHost
+        try {
+            $r = Resolve-DnsName -Name $dnsHost -Type A -QuickTimeout -ErrorAction Stop | Where-Object { $_.IPAddress }
+            if (-not $r) { $failures.Add("DNS-NORESULT: Resolve-DnsName $dnsHost returned no A records") }
+        } catch {
+            $failures.Add("DNS-FAIL: Resolve-DnsName $dnsHost - $($_.Exception.Message)")
+        }
+    }
+
     # Check servicesRunningOrManual
     if ($t.requires.servicesRunningOrManual) {
         foreach ($n in $t.requires.servicesRunningOrManual) {

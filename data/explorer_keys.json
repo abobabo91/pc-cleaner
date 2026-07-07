@@ -98,26 +98,27 @@
       "note": "Copilot button on taskbar off (Win11 24H2+)"
     },
     {
-      "category": "copilot_ui",
+      "category": "chat_ui",
       "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
       "name": "TaskbarMn",
       "type": "DWord",
       "value": 0,
-      "note": "Chat / Microsoft Teams icon off"
+      "note": "Chat / Microsoft Teams icon off. Ask user — some use Teams personal chat from the taskbar as their entry point to Teams itself. Moved to ask_user 2026-07-07."
     },
     {
-      "category": "taskbar",
+      "category": "virtual_desktops",
       "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
       "name": "ShowTaskViewButton",
       "type": "DWord",
       "value": 0,
-      "note": "Task View button off. Ask user — some rely on virtual desktops via this button."
+      "note": "Task View button off. Ask user — many users navigate virtual desktops with this button; silently hiding it breaks their workflow. Moved to ask_user 2026-07-07."
     }
   ],
   "notes": {
     "apply_silently": ["widgets", "taskbar", "search", "copilot_ui"],
-    "ask_user": ["classic_menu", "file_visibility", "theme"],
-    "restart_required": ["classic_menu", "taskbar", "search", "widgets", "copilot_ui"],
-    "restart_command": "Stop-Process -Name explorer -Force"
+    "ask_user": ["classic_menu", "file_visibility", "theme", "chat_ui", "virtual_desktops"],
+    "restart_required": ["classic_menu", "taskbar", "search", "widgets", "copilot_ui", "chat_ui", "virtual_desktops"],
+    "restart_command": "Stop-Process -Name explorer -Force",
+    "reasoning_2026-07-07": "TaskbarMn (Chat) and ShowTaskViewButton were previously in apply_silently categories (copilot_ui + taskbar). Post-BT-pairing incident audit flagged them: both are muscle-memory Windows UX elements the user notices when hidden. Split into their own ask_user categories so they're each individually promptable and the previously-silent categories stay silent for the actually-invisible changes (Widgets policy, taskbar alignment, search box)."
   }
 }

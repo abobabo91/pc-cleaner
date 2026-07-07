@@ -3,7 +3,8 @@
 
 param(
     [Parameter(Mandatory=$true)][string]$Plan,
-    [string]$SnapshotDir
+    [string]$SnapshotDir,
+    [switch]$IKnowWhatImDoing
 )
 
 $ErrorActionPreference = 'Continue'
@@ -14,9 +15,33 @@ $log = Join-Path $SnapshotDir 'apply.log'
 "===== storage apply started $(Get-Date -Format o) =====" | Out-File $log -Encoding UTF8
 
 $planData = Get-Content $Plan -Raw | ConvertFrom-Json
-$sources  = @($planData.sources)      # list of source objects with Path/Filter/MinAgeDays
+$sourcesAll = @($planData.sources)      # list of source objects with Path/Filter/MinAgeDays/riskLevel/confirmed
 $runDism  = [bool]$planData.runDism
 $enableStorageSense = [bool]$planData.enableStorageSense
+
+# riskLevel enforcement — added 2026-07-07 after audit found the module ignored
+# riskLevel:"ask" and blindly deleted Recycle Bin, Windows.old, memory dumps, and
+# old Prefetch. Any source with riskLevel=ask requires an explicit confirmed:true
+# field in the plan entry — the orchestrator asks the user first. -IKnowWhatImDoing
+# overrides for scripted/testing use only.
+$sources = New-Object System.Collections.Generic.List[object]
+$refused = New-Object System.Collections.Generic.List[string]
+foreach ($src in $sourcesAll) {
+    $rl = if ($src.riskLevel) { [string]$src.riskLevel } else { 'auto' }
+    $conf = [bool]$src.confirmed
+    if ($rl -eq 'ask' -and -not $conf -and -not $IKnowWhatImDoing) {
+        Write-Log $log 'BLOCK' "$($src.name) - riskLevel=ask and no explicit confirmed:true in plan; skipping. Add confirmed:true to the plan entry (after the user answers YES) or pass -IKnowWhatImDoing."
+        $refused.Add($src.name)
+        continue
+    }
+    $sources.Add($src)
+}
+if ($refused.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Skipped $($refused.Count) risk-level=ask source(s) missing confirmation: $($refused -join ', ')" -ForegroundColor Yellow
+    Write-Host "These sources require an explicit user 'yes' answer to be included." -ForegroundColor DarkGray
+    Write-Host ""
+}
 
 # Snapshot: sizes before
 $snap = Join-Path $SnapshotDir 'snapshot.json'

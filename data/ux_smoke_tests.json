@@ -84,6 +84,50 @@
       },
       "probe": { "type": "service_state_check" },
       "onFailure": "Audio device list is empty or won't switch. AudioSrv/AudioEndpointBuilder are tripwire - investigate why they're not running."
+    },
+    {
+      "id": "recycle_bin_exists",
+      "flow": "Recycle Bin is intact after storage module",
+      "note": "Added 2026-07-07 after audit. Storage module previously deleted C:\\$Recycle.Bin regardless of riskLevel schema. Now gated behind confirmed:true; this test verifies the folder still exists after any storage apply.",
+      "requires": {
+        "pathExists": "C:\\$Recycle.Bin"
+      },
+      "probe": { "type": "path_check" },
+      "onFailure": "Recycle Bin storage was destroyed. If storage module ran, check apply.log for a $Recycle.Bin source that was not confirmed by the user."
+    },
+    {
+      "id": "windows_old_gate",
+      "flow": "Windows.old rollback available (if it was ever present)",
+      "note": "Not a failure if Windows.old never existed on this machine. FAIL means storage module deleted a Windows.old that existed at diagnose time.",
+      "requires": {
+        "pathExistsUnlessMissingAtStart": "C:\\Windows.old"
+      },
+      "probe": { "type": "path_check_conditional" },
+      "onFailure": "Windows.old (feature-update rollback data) was deleted. Ensure the storage plan entry for windows_old has confirmed:true only if the user explicitly agreed."
+    },
+    {
+      "id": "lid_action_sane",
+      "flow": "Lid-close power button behavior is a real setting (not silently forced to Do Nothing)",
+      "note": "Just checks that LIDACTION is not 0 for BOTH AC and DC (Do Nothing on both is the pc-cleaner default that surprised users). If the user actually wants that, they can override; this smoke just flags the silent-apply case for post-run review.",
+      "requires": {
+        "powercfgQueryNotBoth": {
+          "subgroup": "SUB_BUTTONS",
+          "setting": "LIDACTION",
+          "acDcBothMustNotEqual": 0
+        }
+      },
+      "probe": { "type": "powercfg_query" },
+      "onFailure": "Lid-close is set to Do Nothing on both AC and battery. If you didn't explicitly ask for this, revert the power module apply."
+    },
+    {
+      "id": "dns_resolves",
+      "flow": "DNS resolution works for a common host after network module",
+      "note": "Runs Resolve-DnsName on a well-known host. FAIL means the DNS override targeted an unreachable server, the network profile is captive-portal and pc-cleaner overrode it anyway, or the VPN was disrupted.",
+      "requires": {
+        "resolveDnsHost": "www.microsoft.com"
+      },
+      "probe": { "type": "dns_query", "timeoutSeconds": 5 },
+      "onFailure": "DNS resolution failed. If network module ran with DNS override, revert. If not, check WiFi/VPN state."
     }
   ]
 }

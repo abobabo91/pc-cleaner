@@ -1,0 +1,87 @@
+{
+  "_comment": "Path patterns Defender exclusions must NEVER cover without explicit user override. Broad exclusions here defeat the point of Defender for the machine's most-attacked directories. ps/apply/defender.ps1 refuses any exclusion that matches these patterns unless -IKnowWhatImDoing is set. Match rules: paths are compared case-insensitively; a plan path P is refused if any pattern here is a case-insensitive substring or exact match of P AFTER env-var expansion. Added 2026-07-07 after module audit.",
+  "refuseUnlessOverride": [
+    {
+      "pattern": "C:\\",
+      "matchType": "exact",
+      "why": "Excluding the entire OS drive is never appropriate for path-based exclusion."
+    },
+    {
+      "pattern": "C:\\Users",
+      "matchType": "exact",
+      "why": "Excluding all users' profiles removes Defender from Downloads, Desktop, Documents, temp folders — the exact places malware lands."
+    },
+    {
+      "pattern": "C:\\Users\\Public",
+      "matchType": "exact",
+      "why": "Public folder is a common malware drop target."
+    },
+    {
+      "pattern": "%USERPROFILE%",
+      "matchType": "exact",
+      "why": "Same problem as C:\\Users — the current user's whole profile including Downloads and Desktop."
+    },
+    {
+      "pattern": "%USERPROFILE%\\Downloads",
+      "matchType": "exact",
+      "why": "Downloads folder is the #1 initial landing spot for browser-delivered malware."
+    },
+    {
+      "pattern": "%USERPROFILE%\\Desktop",
+      "matchType": "exact",
+      "why": "Desktop is commonly used to store just-downloaded files."
+    },
+    {
+      "pattern": "%USERPROFILE%\\Documents",
+      "matchType": "exact",
+      "why": "Documents is where phishing attachments (docx macros, pdf) typically land."
+    },
+    {
+      "pattern": "%TEMP%",
+      "matchType": "exact",
+      "why": "TEMP is where installers unpack and where in-memory-then-disk droppers write. Excluding it hides the whole decompression phase."
+    },
+    {
+      "pattern": "%LOCALAPPDATA%\\Temp",
+      "matchType": "exact",
+      "why": "Same as %TEMP% (usually the same folder)."
+    },
+    {
+      "pattern": "%APPDATA%",
+      "matchType": "exact",
+      "why": "AppData\\Roaming is the persistence directory for user-mode malware (Startup shortcuts, Chrome extensions, PowerShell profiles)."
+    },
+    {
+      "pattern": "%LOCALAPPDATA%",
+      "matchType": "exact",
+      "why": "LocalAppData is where portable apps + Chromium extensions + persistence artifacts live."
+    },
+    {
+      "pattern": "%WINDIR%",
+      "matchType": "exact",
+      "why": "Excluding Windows itself hides system-file impersonation and drivers."
+    },
+    {
+      "pattern": "%ProgramData%",
+      "matchType": "exact",
+      "why": "ProgramData is another common persistence location."
+    }
+  ],
+  "warnButAllow": [
+    {
+      "pattern": "*\\node_modules",
+      "matchType": "wildcard",
+      "why": "Large + noisy but has occasionally hosted supply-chain malware. Allow but warn."
+    },
+    {
+      "pattern": "*\\Library\\PythonEnvironments",
+      "matchType": "wildcard",
+      "why": "Python venvs. Allow but warn."
+    },
+    {
+      "pattern": "*\\.git",
+      "matchType": "wildcard",
+      "why": "Git internals. Allow but warn — cloned repos can carry malicious hook scripts."
+    }
+  ]
+}

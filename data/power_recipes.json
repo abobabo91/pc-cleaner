@@ -18,7 +18,12 @@
       "ACValue": 0,
       "DCValue": 0,
       "appliesTo": "laptop",
-      "rationale": "Lid close: do nothing. Prevents Modern Standby wake-in-bag heat + battery drain. Combine with hibernate-on-timer for a true 'close lid = safe' UX."
+      "promptRequired": true,
+      "promptAdded": "2026-07-07",
+      "promptText": "When you close the laptop lid, what should happen?",
+      "promptOptions": ["Sleep (Windows default)", "Do nothing — I'll press power to shut it down", "Hibernate"],
+      "promptOptionValues": [1, 0, 2],
+      "rationale": "Lid close: do nothing. Prevents Modern Standby wake-in-bag heat + battery drain. Combine with hibernate-on-timer for a true 'close lid = safe' UX. Requires prompt because 'close lid → sleep' is the expected default for most users; silently changing it surprises people who close the lid to walk away and come back to find nothing woke up."
     },
     {
       "id": "sleep_never_dc",
@@ -72,7 +77,12 @@
       "ACValue": 0,
       "DCValue": 0,
       "appliesTo": "all",
-      "rationale": "USB selective suspend off. Prevents dropped audio interfaces, disconnected BT dongles, and the classic 'mouse dies until I unplug it' failure. Optional — costs ~0.2W idle."
+      "promptRequired": true,
+      "promptAdded": "2026-07-07",
+      "promptText": "Do any of your USB devices drop out or freeze randomly? (BT dongles, audio interfaces, external mice, dongles going unresponsive.)",
+      "promptOptions": ["Yes, they do — turn off USB power saving", "No, everything works — keep default"],
+      "promptOptionValues": [0, 1],
+      "rationale": "USB selective suspend off. Prevents dropped audio interfaces, disconnected BT dongles, and the classic 'mouse dies until I unplug it' failure. Optional — costs ~0.2W idle. Requires prompt because most users don't have USB drop-out issues; turning this off preemptively costs battery for no gain."
     },
     {
       "id": "disk_sleep_ac_never",
