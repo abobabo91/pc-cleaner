@@ -82,6 +82,40 @@ Answers:
 
 ---
 
+**Q4 — Web results in Start menu**
+
+> "When you type into the Start menu, do you want it to also search the web (with Bing) — or only find things on your computer?"
+
+Answers:
+- `Only files and apps on my computer` (Bing off in Start)
+- `Also web results from Bing` (keep default)
+- `I'm not sure`
+
+*Skip if:* user's default browser is Edge AND their default search engine is Bing (both signals of "I like Bing" — don't fight it).
+
+*"I'm not sure" inference:* → `Only files and apps on my computer` (majority of users find the web results in Start noisy or annoying; if the user actually uses them they'll know and answer differently).
+
+*Controls:* `HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer\DisableSearchBoxSuggestions = 1` and `HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search\BingSearchEnabled = 0` and `CortanaConsent = 0`. Moved from apply_silently to ask_user 2026-07-07 after audit — silently killing Bing-in-Start is surprising to users who used it deliberately.
+
+---
+
+**Q5 — Windows Recall (Copilot+ PCs)**
+
+> "Your PC has a feature called Recall — it automatically takes screenshots every few seconds so you can search 'what was that recipe I saw last week?' Some people love it, others find it creepy. Which are you?"
+
+Answers:
+- `Turn it off — feels creepy`
+- `Keep it on — I use it (or want to try it)`
+- `I'm not sure`
+
+*Skip if:* the machine is not a Copilot+ PC (i.e. no ARM64 Copilot+ hardware and no `HKLM:\SOFTWARE\Microsoft\Policies\WindowsAI` key structure that indicates the feature is present). On non-Copilot+ machines, Recall is not available and the policy has no effect — silent apply is fine, skip the question.
+
+*"I'm not sure" inference:* → `Turn it off — feels creepy`. Recall is opt-in in current builds; most users who don't remember enrolling would rather not have screenshots taken.
+
+*Controls:* `HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI\DisableAIDataAnalysis = 1` and `HKCU:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI\DisableAIDataAnalysis = 1`. Moved from apply_silently to ask_user 2026-07-07 after audit — some users deliberately enroll in Recall on Copilot+ PCs and silently disabling it regresses their workflow.
+
+---
+
 ### After all questions, show the decision summary
 
 ```

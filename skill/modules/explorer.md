@@ -144,6 +144,18 @@ Answers: `Yes — dark mode` / `No — light mode` / `I'm not sure`.
 
 ---
 
+**Q9 — Task View button (virtual desktops)**
+
+> "Do you use the little squares icon on the taskbar to switch between desktops? (It's how you juggle two different setups — say, one desktop for work windows and one for personal browsing.)"
+
+*Skip if:* Task View already hidden (`ShowTaskViewButton=0`) AND the user has never launched Task View (no `TaskViewGesture` events in the shell event log within 90 d).
+
+*"I'm not sure" inference:* Check whether the user has ever pressed Win+Tab (opens Task View). If UserAssist shows launches → YES (keep button). Otherwise → YES anyway (keep default — many users find it without pressing Win+Tab, and hiding it silently is exactly the class of surprise this module now guards against; see incident 2026-07-07).
+
+*Controls:* `HKCU:\...\Advanced\ShowTaskViewButton`. If user answers NO → set to 0. If YES → leave alone (default is 1).
+
+---
+
 ### After all questions, show the decision summary
 
 ```

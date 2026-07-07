@@ -66,15 +66,21 @@ The order in which entries are asked, and the skip / inference rules per class:
 
 *Skip if:* not installed.
 
+**Note on Game Bar wording — moved to ask 2026-07-07 after audit.** Ask this one in plain English, framed around what the user DOES with the button-combo, not "do you game": *"Do you ever press Windows key + G to take screenshots or record what's happening on your screen? Or use the Xbox Game Bar for any reason?"* Because many non-gamers use Win+G as their screenshot/screen-record hotkey and don't associate it with "gaming".
+
 *"I'm not sure" inference:*
 - **Solitaire**: → NO (bundled cruft).
 - **Minecraft Launcher**: UserAssist launch in last 90 d → YES. Otherwise → NO.
-- **Game Bar (`Microsoft.XboxGamingOverlay`)**: if `profile.gpu[]` has a discrete GPU AND role_signals shows gamer signals → YES. Otherwise → NO.
-- **Xbox app**: same rule as Game Bar. Additionally, if the app has been launched in 90 d → YES.
-- **Xbox sign-in service (`Microsoft.XboxIdentityProvider`)**: if Xbox app kept OR Minecraft kept OR Forza detected → YES. Otherwise → NO (but note: it's needed for any game with MSA sign-in; the SAFE default is actually to keep it).
+- **Game Bar (`Microsoft.XboxGamingOverlay`)**: check three signals in order:
+  1. Any Win+G invocation traceable in the last 90 d (registry `HKCU:\SOFTWARE\Microsoft\GameBar\LastGamePadUpdate` timestamp, OR GameBar UserAssist launches) → YES.
+  2. `profile.gpu[]` has a discrete GPU AND role_signals shows gamer signals (Steam / Epic / Riot / Battle.net installed) → YES.
+  3. Otherwise → YES with reason "Game Bar backs Win+G screenshots, which many non-gamers use." This defaults to KEEP because the tool learned on 2026-07-07 that Game Bar backs a feature the user might rely on without knowing its name. Removal is opt-in only.
+- **Xbox app**: same rule as Game Bar, but if the app has been launched in 90 d → YES; otherwise defer to Game Bar's answer.
+- **Xbox sign-in service (`Microsoft.XboxIdentityProvider`)**: if Xbox app kept OR Minecraft kept OR Forza detected → YES. Otherwise → YES anyway (needed for any game with MSA sign-in; safer default is to keep).
+- **Xbox Game Overlay / Speech-to-Text overlay (`Microsoft.XboxGameOverlay`, `Microsoft.XboxSpeechToTextOverlay`, `Microsoft.Xbox.TCUI`)**: keep alongside `Microsoft.XboxGamingOverlay`. Ask together as "Xbox Game Bar" — they're a family; splitting them breaks the overlay.
 - **Pre-installed Spotify (`SpotifyAB.SpotifyMusic`)**: if the desktop Spotify (`Spotify.exe` under LocalAppData) is installed → NO (the desktop one is what the user uses). Otherwise use UserAssist to decide.
 
-*Controls:* `Microsoft.MicrosoftSolitaireCollection`, `Microsoft.MinecraftUWP`, `Microsoft.XboxGamingOverlay`, `Microsoft.GamingApp`, `Microsoft.XboxIdentityProvider`, `SpotifyAB.SpotifyMusic`.
+*Controls:* `Microsoft.MicrosoftSolitaireCollection`, `Microsoft.MinecraftUWP`, `Microsoft.XboxGamingOverlay`, `Microsoft.XboxGameOverlay`, `Microsoft.XboxSpeechToTextOverlay`, `Microsoft.Xbox.TCUI`, `Microsoft.GamingApp`, `Microsoft.XboxIdentityProvider`, `SpotifyAB.SpotifyMusic`.
 
 ---
 
