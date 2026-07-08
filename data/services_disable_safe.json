@@ -78,14 +78,13 @@
       }
     },
     "printer_scanner": {
-      "reason_group": "No printer or scanner",
+      "reason_group": "No printer or scanner (NOTE: StiSvc removed 2026-07-08 — was hidden-UX-dep for iPhone/iPad USB imaging pipeline in iTunes. See incident_2026-07-08 in knowledge_base. StiSvc is now in services_tripwire.json.)",
       "services": {
         "Spooler":                "Print Spooler (also closes PrintNightmare CVE class)",
         "PrintNotify":            "Print dialogs/notifications",
         "PrintWorkflowUserSvc":   "Modern print workflow",
         "McpManagementService":   "Microsoft Universal Print (Azure)",
-        "WiaRpc":                 "Scanner button events",
-        "StiSvc":                 "Windows Image Acquisition (scanner/camera)"
+        "WiaRpc":                 "Scanner button events"
       }
     },
     "storage_spaces_backup": {

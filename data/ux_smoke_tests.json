@@ -128,6 +128,18 @@
       },
       "probe": { "type": "dns_query", "timeoutSeconds": 5 },
       "onFailure": "DNS resolution failed. If network module ran with DNS override, revert. If not, check WiFi/VPN state."
+    },
+    {
+      "id": "iphone_itunes_pipeline",
+      "flow": "iPhone / iPad appears in iTunes when plugged in via USB",
+      "note": "Added 2026-07-08 after incident. Only runs if Apple software is installed on the machine (services present) — skipped otherwise. Checks that the three services backing the iOS-over-USB path are not disabled. If any are Disabled, iPhone will not appear in iTunes / Explorer even with the phone unlocked and Trust prompt accepted.",
+      "skipIfServiceMissing": ["Apple Mobile Device Service"],
+      "requires": {
+        "servicesRunningOrManual": ["Apple Mobile Device Service", "StiSvc"],
+        "servicesNotDisabled": ["Bonjour Service"]
+      },
+      "probe": { "type": "service_state_check" },
+      "onFailure": "iPhone / iPad silently won't appear in iTunes. Restore: Set-Service 'Apple Mobile Device Service' -StartupType Automatic; Set-Service StiSvc -StartupType Automatic; Set-Service 'Bonjour Service' -StartupType Automatic; then Start-Service on each. All three are tripwire — if any is Disabled, something bypassed the tripwire enforcement (check apply.log for BLOCK entries, or a pre-tripwire snapshot state)."
     }
   ]
 }

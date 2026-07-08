@@ -34,6 +34,26 @@ $results = New-Object System.Collections.Generic.List[object]
 foreach ($t in $tests) {
     $failures = New-Object System.Collections.Generic.List[string]
 
+    # Skip test entirely if an anchor service isn't installed. Used for tests that only
+    # apply when a specific third-party stack (e.g. iTunes / Apple Mobile Device Service)
+    # is present — running them on machines without that stack would emit false failures.
+    if ($t.skipIfServiceMissing) {
+        $skip = $false
+        foreach ($n in $t.skipIfServiceMissing) {
+            if (-not (Get-Service -Name $n -ErrorAction SilentlyContinue)) { $skip = $true; break }
+        }
+        if ($skip) {
+            $results.Add([PSCustomObject]@{
+                id       = $t.id
+                flow     = $t.flow
+                status   = 'SKIP'
+                failures = @()
+                remedy   = $null
+            })
+            continue
+        }
+    }
+
     # Check pathExists (path-existence smoke test)
     if ($t.requires.pathExists) {
         $p = [Environment]::ExpandEnvironmentVariables($t.requires.pathExists)
@@ -150,7 +170,7 @@ if ($Json) {
     Write-Host ""
     Write-Host "===== UX smoke tests =====" -ForegroundColor Cyan
     foreach ($r in $results) {
-        $color = if ($r.status -eq 'PASS') { 'Green' } else { 'Red' }
+        $color = switch ($r.status) { 'PASS' { 'Green' } 'SKIP' { 'DarkGray' } default { 'Red' } }
         Write-Host ("[{0}] {1}  --  {2}" -f $r.status, $r.id, $r.flow) -ForegroundColor $color
         if ($r.failures) {
             foreach ($f in $r.failures) { Write-Host "       $f" -ForegroundColor DarkYellow }

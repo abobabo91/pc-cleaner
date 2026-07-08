@@ -288,6 +288,41 @@
         "Any modern-auth prompt in a UWP context"
       ],
       "addedAt": "2026-07-07"
+    },
+
+    "StiSvc": {
+      "reason": "Windows Image Acquisition (WIA) — hidden UX dep, added 2026-07-08",
+      "backs": [
+        "iPhone / iPad USB detection in iTunes (iOS devices expose themselves as imaging devices; AMDS driver stack depends on WIA)",
+        "iPhone appearing under 'This PC' in Explorer for photo import",
+        "Scanner button events + scanner UI (its original documented purpose)",
+        "Camera-connect autoplay for older cameras"
+      ],
+      "addedAt": "2026-07-08",
+      "incident": "Was in services_disable_safe printer_scanner category. Q1 asked 'do you print or scan' — user with no printer answered NO, WIA got disabled, iPhone silently stopped appearing in iTunes. Same class as 2026-07-07 BT incident: single-feature question killed a multi-feature service."
+    },
+    "Bonjour Service": {
+      "reason": "Apple Bonjour (mDNS) — hidden UX dep, added 2026-07-08",
+      "backs": [
+        "iTunes / Apple Music device discovery (iPhone sync, Home Sharing)",
+        "AirPrint printer discovery from Windows",
+        "AirPlay speaker discovery",
+        "Adobe Creative Cloud device presence",
+        "Any third-party app that uses mDNS on Windows (some dev tools, IoT setup apps)"
+      ],
+      "addedAt": "2026-07-08",
+      "incident": "Was in network_risky_features.json as 'redundant since Win10 has native mDNS' — but native mDNS does NOT cover iTunes device sync (that path goes through Bonjour+AMDS). Disable broke iPhone visibility in iTunes on 2026-07-08. Note: only present if iTunes / Adobe CC is installed; Get-Service returns nothing on machines without Apple software, so the tripwire is a no-op there."
+    },
+    "Apple Mobile Device Service": {
+      "reason": "Apple Mobile Device Service (AMDS) — third-party, added 2026-07-08",
+      "backs": [
+        "Every iOS device connection on Windows (iPhone / iPad / iPod)",
+        "iTunes backup + restore",
+        "Finder-style device browsing in iTunes",
+        "Xcode / third-party MDM tools that talk to iOS devices"
+      ],
+      "addedAt": "2026-07-08",
+      "incident": "Belt-and-suspenders. AMDS was NOT touched by the 2026-07-08 incident (Bonjour + StiSvc were), but any future 'clean up Apple bloat' rule risks catching this too. If the user has an iPhone, AMDS must stay."
     }
   }
 }

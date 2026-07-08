@@ -27,11 +27,13 @@
     },
     {
       "name": "mDNS_Bonjour",
-      "description": "Apple Bonjour mDNS service — installed alongside iTunes / Adobe Creative Cloud. Windows 10 20H1+ has native mDNS so Bonjour is redundant. Disable only if the third-party service exists.",
+      "description": "Apple Bonjour mDNS service — installed alongside iTunes / Adobe Creative Cloud. Native Windows mDNS covers AirPrint/AirPlay discovery but does NOT cover iTunes device sync (iPhone/iPad appear in iTunes via the Bonjour + Apple Mobile Device Service stack).",
       "disableCommand": "Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Set-Service -StartupType Disabled; Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Stop-Service -Force",
       "revertCommand": "Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Set-Service -StartupType Automatic; Get-Service 'Bonjour Service' -ErrorAction SilentlyContinue | Start-Service",
-      "risk": "medium",
-      "notes": "Breaks AirPrint / AirPlay device discovery from Windows. Do not disable Windows' native mDNS — different service."
+      "risk": "high",
+      "requiresConfirm": "appleDeviceSyncConfirmedNo",
+      "requiresConfirmPrompt": "Do you sync an iPhone, iPad, or iPod with iTunes / Apple Music on this computer? (Also: do you use Bonjour-based dev tools like avahi, or Adobe Creative Cloud sign-in?)",
+      "notes": "Bonjour Service is ALSO listed in services_tripwire.json (added 2026-07-08). The tripwire is the hard backstop — this entry documents the standalone network-module path for completeness, but any disable requires an explicit NO answer to the iPhone/iTunes question (appleDeviceSyncConfirmedNo:true in the plan). Reason: 2026-07-08 incident — Bonjour disabled 'because Win10 has native mDNS' silently killed iPhone visibility in iTunes."
     },
     {
       "name": "WPAD",

@@ -56,7 +56,7 @@ The questions, in the order they should be asked (skip any whose condition fails
 
 *"I'm not sure" inference:* If any real printer is configured AND has been used in the last 90 days (check `Get-PrintJob` history), → YES. Otherwise → NO.
 
-*Controls:* `Spooler`, `PrintNotify`, `PrintWorkflowUserSvc_bd465`, `McpManagementService`, `WiaRpc`, `StiSvc`.
+*Controls:* `Spooler`, `PrintNotify`, `PrintWorkflowUserSvc_bd465`, `McpManagementService`, `WiaRpc`. (Note: `StiSvc` used to be here — removed 2026-07-08 because it also backs iPhone/iPad USB imaging. Now tripwire. See Q16 for the Apple-device gate.)
 
 ---
 
@@ -199,6 +199,19 @@ The questions, in the order they should be asked (skip any whose condition fails
 *"I'm not sure" inference:* Recent launch within 30 days → YES. Otherwise → NO, and flag for uninstall in the `bloat` module.
 
 *Controls:* `CometElevationService`, `CometUpdaterService*`.
+
+---
+
+**Q16 — iPhone / iPad / iTunes**
+> "Do you plug an iPhone, iPad, or iPod into this computer — even occasionally? (For iTunes sync, backup, or just importing photos.)"
+
+*Skip if:* NONE of the following are true: `Get-Service 'Apple Mobile Device Service' -ErrorAction SilentlyContinue` returns something, `C:\Program Files\iTunes` or `C:\Program Files\Common Files\Apple` exists, or Apple Mobile Device USB Driver is installed (`pnputil /enum-drivers | Select-String -Pattern 'Apple Mobile Device'`). (No Apple software = don't ask.)
+
+*"I'm not sure" inference:* Any Apple USB device connected in the last 90 days (check `Get-WinEvent -LogName 'Microsoft-Windows-DriverFrameworks-UserMode/Operational'` for AMDS device arrivals) → YES. Otherwise → NO.
+
+*Controls:* (none directly — `StiSvc`, `Bonjour Service`, and `Apple Mobile Device Service` are all tripwire and never disabled by this module. This question is informational for the services module, but its answer flows to the `network` module's `mDNS_Bonjour` gate — a NO answer plus `appleDeviceSyncConfirmedNo:true` is required for the network module to touch Bonjour. It also flows to the `startup` module's `apple_helpers` category — a YES answer keeps `iTunesHelper` / `AppleSyncNotifier`.)
+
+*Why this question exists (2026-07-08 incident):* The previous flow silently disabled Bonjour Service (via `network_risky_features.json` mDNS entry) AND `StiSvc` (via Q1 "no printer or scanner"), which together killed iPhone visibility in iTunes on the user's machine. Neither was linked to iPhone use in the question wording. This question is the explicit gate — plus tripwire is the hard backstop.
 
 ---
 
