@@ -96,13 +96,13 @@ pc-cleaner/
 ├── knowledge_base/                 # design decisions, gotchas, project rules from real runs
 ├── skill/
 │   ├── SKILL.md                    # top-level orchestration + principles + user profile intake
-│   └── modules/                    # 16 module docs, one per capability
+│   └── modules/                    # 16 module docs, one per capability (benchmark, bloat, crashdumps, defender, drivers, explorer, network, ninite-personalized, power, privacy, profile, services, startup, storage, tray-taskbar, unused-apps)
 ├── ps/
 │   ├── _lib/common.ps1             # snapshot dir, elevation check, machine profile
 │   ├── pc-cleaner.ps1              # orchestrator entry point
 │   ├── diagnose/*.ps1              # 16 read-only enumerators (JSON out)
 │   └── apply/*.ps1                 # 13 change-appliers (each with snapshot + revert)
-└── data/                           # 47 curated JSON files (safe-disable lists, keys, etc.)
+└── data/                           # 34 curated JSON files (safe-disable lists, keys, etc.)
 ```
 
 ## Modules
@@ -111,7 +111,7 @@ pc-cleaner/
 
 - `profile` — detects machine: laptop, CPU vendor + generation, GPUs, WiFi chip + subsystem OEM (for driver hunt), sleep states, battery, BSOD count.
 - `benchmark` — records boot time, RAM, service count, autostart count. Before/after diff.
-- `services` — audits 300+ Windows services against `data/services_tripwire.json` (do not touch) and `data/services_disable_safe.json` (safe to disable across 10 categories: cellular_modem, enterprise_mdm, legacy_networking, smart_cards, telemetry, gaming, remote_desktop_host, printer_scanner, storage_spaces_backup, mixed_reality).
+- `services` — audits 300+ Windows services against `data/services_tripwire.json` (do not touch) and `data/services_disable_safe.json` (safe to disable across 10 categories: cellular_modem, enterprise_mdm, legacy_p2p, smart_cards, telemetry, gaming, remote_desktop_host, printer_scanner, storage_spaces_backup, mixed_reality).
 - `startup` — Registry Run keys (4 hives) + Startup folders + user Task Scheduler entries. Cross-references tripwire (OneDrive, Docker, password managers, security tools) and safe-disable (Adobe ARM Updater, iTunes helper, GoogleUpdate, CCleaner tray).
 - `bloat` — UWP inventory against `data/bloat_uwp.json` (30+ safe removals + 13 ask + 15 never-touch). Handles system-provisioned apps by calling `Remove-AppxProvisionedPackage -Online` before `Remove-AppxPackage -AllUsers`.
 - `privacy` — 25 registry keys across telemetry / ad ID / activity history / Explorer ads / Bing search / Copilot / Recall / Edge tracking / WiFi Sense / location.
@@ -151,7 +151,7 @@ pc-cleaner/
 
 ## Data files
 
-47 JSON files under `data/` cover services, autostarts, UWP apps, registry keys, driver sources, known-bad drivers, bug-check codes, Windows SDK URLs, tray icons, taskbar defaults, Ninite bundles, role signals, dev cache paths, dev toolchain markers, storage sources, storage conflicts, WLAN low-power flags, WiFi/BT combo cards, DNS providers, network risky features, Modern Standby overrides, and more. Edit these — not the code — when adding categorizations.
+34 JSON files under `data/` cover services, autostarts, UWP apps, registry keys, driver sources, known-bad drivers, bug-check codes, Windows SDK URLs, tray icons, taskbar defaults, Ninite bundles, role signals, dev cache paths, dev toolchain markers, storage sources, storage conflicts, WLAN low-power flags, WiFi/BT combo cards, DNS providers, network risky features, Modern Standby overrides, and more. Edit these — not the code — when adding categorizations.
 
 ## Testing
 
