@@ -22,9 +22,11 @@ Concrete findings from the session that seeded this project.
 | 0x133 | dxgmms2.sys (GPU scheduler) | 1 |
 | 0x133 | amdacpbus.sys (AMD Audio CoProcessor — carries BT on Ryzen 6000) | 1 |
 
-**Root cause:** Realtek WiFi driver stuck at May 2021 build (`2024.0.10.223`). Lenovo could not push updates because the card's subsystem ID is HP's (`103C`), so Lenovo System Update / Windows Update / Windows Optional Updates all said "you're current." Cross-vendor SoftPaq from HP was the fix.
+**Contributing cause:** Realtek WiFi driver stuck at May 2021 build (`2024.0.10.223`). Lenovo could not push updates because the card's subsystem ID is HP's (`103C`), so Lenovo System Update / Windows Update / Windows Optional Updates all said "you're current." Cross-vendor SoftPaq from HP was the fix for that part.
 
-**Fix applied:** HP SoftPaq sp162860 (WLAN, v2024.10.230.600, Jun 2025) + PCIe ASPM disabled at OS level. Zero BSODs since.
+**Fix applied:** HP SoftPaq sp162860 (WLAN, v2024.10.230.600, Jun 2025) + PCIe ASPM disabled at OS level.
+
+**Not the whole story — crashes resumed.** Four more 0x133s followed (2026-06-28 → 07-16), each blaming a *different* driver. Naming `rtwlane.sys` from the dump signature was the trap: in this crash class the blamed driver is whoever was running when the watchdog fired. LatencyMon on 2026-07-17 found the actual load — `winhvr.sys` burning 4.9% of a core as Hyper-V/VBS baseline under Docker Desktop + WSL2. Full investigation, diagnosis workflow and the fixes that stuck: [`bsod-0x133-dpc-storm-ryzen6000.md`](bsod-0x133-dpc-storm-ryzen6000.md).
 
 **Generalization for `drivers` module:**
 - Always check subsystem ID, not just VID/DEV.
