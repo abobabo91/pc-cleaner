@@ -1,4 +1,4 @@
-# UX smoke test runner. Called by the orchestrator after every module apply
+﻿# UX smoke test runner. Called by the orchestrator after every module apply
 # (and can be run standalone). Reads data/ux_smoke_tests.json, checks each
 # test's requirements, prints a table of PASS/FAIL, and returns a JSON blob
 # on stdout so the orchestrator can correlate a failure to the last change.

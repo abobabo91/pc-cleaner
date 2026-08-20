@@ -1,4 +1,4 @@
-# Apply: uninstall UWP packages from a plan JSON. Snapshots first.
+﻿# Apply: uninstall UWP packages from a plan JSON. Snapshots first.
 # Runs winget uninstall / Remove-AppxPackage. Kills processes first.
 # REQUIRES ADMIN for AllUsers removal (falls back to current-user if not admin).
 #

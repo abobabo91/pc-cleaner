@@ -1,4 +1,4 @@
-# Shared helpers used by every pc-cleaner module.
+﻿# Shared helpers used by every pc-cleaner module.
 
 function New-SnapshotDir {
     param(

@@ -1,4 +1,4 @@
-# Apply: Add Defender path exclusions from a plan JSON. NEVER touches RTP or scan schedule.
+﻿# Apply: Add Defender path exclusions from a plan JSON. NEVER touches RTP or scan schedule.
 # REQUIRES ADMIN.
 
 param(

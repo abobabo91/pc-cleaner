@@ -1,4 +1,4 @@
-# Apply: delete storage cleanup targets from a plan JSON. Runs DISM if requested.
+﻿# Apply: delete storage cleanup targets from a plan JSON. Runs DISM if requested.
 # HKCU tweaks don't need admin; DISM /online + %windir%\Temp cleanup do.
 
 param(

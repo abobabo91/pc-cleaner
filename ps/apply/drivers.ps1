@@ -1,4 +1,4 @@
-# Apply: for a list of user-confirmed drivers, look up matching OEM SoftPaq / driver package
+﻿# Apply: for a list of user-confirmed drivers, look up matching OEM SoftPaq / driver package
 # and DOWNLOAD it to snapshot dir. Does NOT auto-install — driver install is high-risk
 # and requires user click-through for the vendor's installer.
 #

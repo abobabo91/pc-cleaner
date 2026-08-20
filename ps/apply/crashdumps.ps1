@@ -1,4 +1,4 @@
-# Apply: install Windows SDK Debuggers (if requested), copy dumps to user location,
+﻿# Apply: install Windows SDK Debuggers (if requested), copy dumps to user location,
 # run kd.exe !analyze -v on each, extract failing driver, write crash_linked_drivers.json
 # for the drivers module to consume.
 # REQUIRES ADMIN (to install SDK + read C:\Windows\Minidump).
@@ -53,7 +53,7 @@ if (-not (Test-Path $sdkKd)) {
 $dumpDir = Join-Path $SnapshotDir 'dumps'
 New-Item -ItemType Directory -Path $dumpDir -Force | Out-Null
 $dumps = @(Get-ChildItem 'C:\Windows\Minidump\*.dmp' -ErrorAction SilentlyContinue |
-    Sort-Object LastWriteTime -Descending | Select-Object -First ($planData.maxDumps ?? 10))
+    Sort-Object LastWriteTime -Descending | Select-Object -First $(if ($null -ne $planData.maxDumps) { $planData.maxDumps } else { 10 }))
 foreach ($d in $dumps) {
     try {
         Copy-Item -Path $d.FullName -Destination $dumpDir -Force -ErrorAction Stop

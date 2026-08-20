@@ -22,6 +22,28 @@ For laptops with a known Bluetooth or crash problem, it can find the actual fix 
 
 **You don't answer 20 questions.** You answer 2 quick profile questions ("what do you use this PC for" + "how techy are you"), then look at a list, then say Apply. Total interaction: about 30 seconds of your attention.
 
+## PowerShell scripts must be UTF-8 with a BOM
+
+Windows PowerShell 5.1 reads a `.ps1` as the system ANSI codepage unless the
+file starts with a UTF-8 BOM. Any em-dash, arrow or accented character in a
+BOM-less script is then misread, and in a string containing quotes or braces it
+breaks the parse outright rather than just garbling the output.
+
+`ps/apply/network.ps1` failed to parse for exactly this reason. Same root cause
+as the ASCII-only rule for `.bat` files, different mechanism.
+
+Also: **no PowerShell 7 syntax.** No `??`, no `?:`, no `?.`. Windows 11's
+"Terminal (Admin)" opens 5.1, which is what most users will run this in.
+
+Check both before committing:
+
+```powershell
+Get-ChildItem ps -Recurse -Filter *.ps1 | ForEach-Object {
+  $e=$null; [System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$null,[ref]$e) | Out-Null
+  if ($e.Count) { "PARSE FAIL: $($_.Name) - $($e[0].Message)" }
+}
+```
+
 ## For non-technical users — how to actually run it
 
 You need two things installed once:

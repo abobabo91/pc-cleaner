@@ -1,4 +1,4 @@
-# Apply: SMBv1 removal, LLMNR off, NetBIOS-over-TCP off, optional DNS/DoH override.
+﻿# Apply: SMBv1 removal, LLMNR off, NetBIOS-over-TCP off, optional DNS/DoH override.
 # REQUIRES ADMIN.
 
 param(

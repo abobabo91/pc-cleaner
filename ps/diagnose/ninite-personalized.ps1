@@ -1,4 +1,4 @@
-# Diagnose: detect user's role from installed apps + suggest missing companions.
+﻿# Diagnose: detect user's role from installed apps + suggest missing companions.
 # Read-only. No admin. Non-destructive — outputs winget commands to copy-paste.
 
 $ErrorActionPreference = 'Continue'

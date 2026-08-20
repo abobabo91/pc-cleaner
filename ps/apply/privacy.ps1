@@ -1,4 +1,4 @@
-# Apply: write privacy registry keys from a plan JSON. Exports current values first.
+﻿# Apply: write privacy registry keys from a plan JSON. Exports current values first.
 # REQUIRES ADMIN for HKLM writes.
 #
 # Plan JSON shape:

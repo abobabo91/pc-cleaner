@@ -1,4 +1,4 @@
-# Apply: disable services from a plan JSON. Snapshots first. Emits revert.ps1.
+﻿# Apply: disable services from a plan JSON. Snapshots first. Emits revert.ps1.
 # REQUIRES ADMIN.
 #
 # Plan JSON shape:

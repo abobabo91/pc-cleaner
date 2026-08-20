@@ -1,4 +1,4 @@
-# Orchestrator helper — runs every module's diagnose script in parallel,
+﻿# Orchestrator helper — runs every module's diagnose script in parallel,
 # reads the machine profile + every data/*.json rule file, and emits ONE
 # consolidated evidence.json for Claude to reason over.
 #

@@ -1,4 +1,4 @@
-# Diagnose: hunt for stale + OEM-mismatched + crash-linked drivers.
+﻿# Diagnose: hunt for stale + OEM-mismatched + crash-linked drivers.
 # Read-only. No admin. Cross-references data/known_bad_drivers.json + snapshot's
 # crash_linked_drivers.json (from crashdumps module, if it ran earlier).
 

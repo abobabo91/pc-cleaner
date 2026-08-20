@@ -1,4 +1,4 @@
-# Diagnose: find installed apps that haven't been launched recently, cross-referenced
+﻿# Diagnose: find installed apps that haven't been launched recently, cross-referenced
 # with install size. Uses UserAssist (ROT13-encoded launch counters) primarily; Prefetch
 # as fallback. Applies a "never propose" allowlist from data/unused_apps_never.json.
 #

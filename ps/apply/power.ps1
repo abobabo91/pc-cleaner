@@ -1,4 +1,4 @@
-# Apply: power / sleep / WLAN LPS tweaks from a plan JSON.
+﻿# Apply: power / sleep / WLAN LPS tweaks from a plan JSON.
 # REQUIRES ADMIN for HKLM WLAN class-key writes.
 # Signals pendingWLANCycle to orchestrator instead of restarting adapter inline.
 

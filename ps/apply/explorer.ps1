@@ -1,4 +1,4 @@
-# Apply: write Win11 explorer UI tweaks. Same shape as apply/privacy.ps1.
+﻿# Apply: write Win11 explorer UI tweaks. Same shape as apply/privacy.ps1.
 # HKCU tweaks don't need admin; HKLM ones do. Falls back gracefully.
 # Sets pendingExplorerRestart=true in the run state instead of restarting Explorer inline.
 
